@@ -1,0 +1,14 @@
+{
+  "name": "mobile-rpg-dialogue",
+  "version": "1.0.0",
+  "description": "A mobile-responsive 2D RPG dialogue game - PWA and Android APK",
+  "main": "src/index.html",
+  "scripts": {
+    "start": "npx serve www -p 8080",
+    "build": "node build.js",
+    "cordova:create": "cordova create rpg-app com.mobilerpg.dialogue MobileRPG && cd rpg-app && cordova platform add android",
+    "cordova:build": "cd rpg-app && cordova build android"
+  },
+  "keywords": ["rpg", "dialogue", "mobile", "pwa", "game"],
+  "license": "MIT"
+}
