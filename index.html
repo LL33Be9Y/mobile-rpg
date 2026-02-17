@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Crystal of Shadows - Mobile RPG</title>
+  <link rel="manifest" href="www/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+  <link rel="stylesheet" href="www/css/style.css">
+</head>
+<body>
+  <!-- Title Screen -->
+  <div id="screen-title" class="screen active">
+    <div class="title-content">
+      <div class="title-crystal">💎</div>
+      <h1>Crystal of Shadows</h1>
+      <p class="title-subtitle">A tale of corruption and courage</p>
+      <div class="title-buttons">
+        <button id="btn-new-game" class="btn btn-primary">New Game</button>
+        <button id="btn-continue" class="btn btn-secondary" style="display:none">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="screen-game" class="screen">
+    <header id="top-bar">
+      <div class="stat-group">
+        <span class="stat" id="stat-hp" title="Health">❤️ <span id="hp-val">100</span></span>
+        <span class="stat" id="stat-mp" title="Mana">💧 <span id="mp-val">50</span></span>
+      </div>
+      <div class="stat-group">
+        <span class="stat" id="stat-gold" title="Gold">💰 <span id="gold-val">50</span></span>
+        <span class="stat" id="stat-lvl" title="Level">⭐ Lv<span id="lvl-val">1</span></span>
+      </div>
+      <button id="btn-menu" class="btn-icon" title="Menu">☰</button>
+    </header>
+
+    <div id="location-area">
+      <h2 id="location-name">Village Square</h2>
+      <p id="location-desc">The heart of Willowbrook village.</p>
+    </div>
+
+    <div id="npc-area"></div>
+    <div id="nav-area"></div>
+
+    <div id="dialogue-overlay" class="hidden">
+      <div id="dialogue-box">
+        <div id="dialogue-header">
+          <span id="dialogue-portrait"></span>
+          <span id="dialogue-speaker"></span>
+        </div>
+        <div id="dialogue-text"></div>
+        <div id="dialogue-choices"></div>
+        <button id="dialogue-advance" class="btn btn-small hidden">Continue ▶</button>
+      </div>
+    </div>
+
+    <div id="toast" class="hidden"></div>
+  </div>
+
+  <!-- Menu Overlay -->
+  <div id="screen-menu" class="screen">
+    <div class="menu-content">
+      <h2>Menu</h2>
+      <button id="btn-inventory" class="btn btn-menu">🎒 Inventory</button>
+      <button id="btn-quests" class="btn btn-menu">📜 Quests</button>
+      <button id="btn-stats" class="btn btn-menu">📊 Stats</button>
+      <button id="btn-save" class="btn btn-menu">💾 Save Game</button>
+      <button id="btn-main-menu" class="btn btn-menu btn-danger">🏠 Main Menu</button>
+      <button id="btn-close-menu" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+
+  <!-- Inventory Overlay -->
+  <div id="screen-inventory" class="screen">
+    <div class="panel-content">
+      <h2>🎒 Inventory</h2>
+      <div id="inventory-list"></div>
+      <button id="btn-close-inventory" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+
+  <!-- Quests Overlay -->
+  <div id="screen-quests" class="screen">
+    <div class="panel-content">
+      <h2>📜 Quests</h2>
+      <div id="quest-list"></div>
+      <button id="btn-close-quests" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+
+  <!-- Stats Overlay -->
+  <div id="screen-stats" class="screen">
+    <div class="panel-content">
+      <h2>📊 Character Stats</h2>
+      <div id="stats-display"></div>
+      <button id="btn-close-stats" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+
+  <!-- Scripts (order matters) -->
+  <script src="www/js/game-state.js"></script>
+  <script src="www/js/characters.js"></script>
+  <script src="www/js/locations.js"></script>
+  <script src="www/js/dialogues.js"></script>
+  <script src="www/js/dialogue-engine.js"></script>
+  <script src="www/js/save-system.js"></script>
+  <script src="www/js/main.js"></script>
+</body>
+</html>
