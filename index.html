@@ -1,114 +1,919 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#1a1a2e">
-  <title>Crystal of Shadows - Mobile RPG</title>
-  <link rel="manifest" href="www/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
-  <link rel="stylesheet" href="www/css/style.css">
-</head>
-<body>
-  <!-- Title Screen -->
-  <div id="screen-title" class="screen active">
-    <div class="title-content">
-      <div class="title-crystal">💎</div>
-      <h1>Crystal of Shadows</h1>
-      <p class="title-subtitle">A tale of corruption and courage</p>
-      <div class="title-buttons">
-        <button id="btn-new-game" class="btn btn-primary">New Game</button>
-        <button id="btn-continue" class="btn btn-secondary" style="display:none">Continue</button>
-      </div>
-    </div>
+<title>Where in the World?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--card:#1c2333;--card-hover:#242d3d;
+  --red:#c41e3a;--red-glow:rgba(196,30,58,0.25);--gold:#d4a843;--gold-dim:rgba(212,168,67,0.12);
+  --teal:#2da891;--teal-dim:rgba(45,168,145,0.12);--danger:#da3633;
+  --text:#e6edf3;--text2:#7d8590;--text3:#484f58;
+  --radius:10px;--radius-sm:6px;
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:1}
+.screen.active{display:flex}
+.overlay{background:rgba(0,0,0,0.88);z-index:50;justify-content:center;align-items:center}
+
+#s-title{background:linear-gradient(160deg,#0d1117 0%,#1a1428 40%,#0d1117 100%);justify-content:center;align-items:center;text-align:center;padding:24px}
+.title-globe{font-size:64px;margin-bottom:8px;animation:spin 20s linear infinite}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+#s-title h1{font-family:'Playfair Display',Georgia,serif;font-size:28px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:4px}
+#s-title .sub{color:var(--text2);font-size:13px;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:20px}
+.diff-row{display:flex;gap:8px;justify-content:center;margin-bottom:20px}
+.diff-chip{padding:8px 16px;border-radius:20px;border:1px solid var(--text3);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:.5px}
+.diff-chip:hover{border-color:var(--text2)}
+.diff-chip.active{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+.diff-desc{color:var(--text3);font-size:11px;margin-bottom:20px;min-height:16px}
+.title-rank{color:var(--gold);font-size:13px;margin-bottom:20px}
+
+#s-briefing{background:var(--bg);justify-content:center;align-items:center;padding:24px}
+.briefing-card{background:var(--surface);border:1px solid var(--red);border-radius:var(--radius);padding:24px 20px;max-width:440px;width:100%;animation:fadeUp .4s ease}
+.briefing-card .badge{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:3px;margin-bottom:14px}
+.briefing-card h2{font-family:'Playfair Display',Georgia,serif;font-size:17px;margin-bottom:10px;color:var(--gold)}
+.briefing-card p{font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:10px}
+.briefing-card .stolen{color:var(--text);font-weight:600}
+.briefing-card .origin{color:var(--teal)}
+
+#s-city{background:var(--bg)}
+#hud{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--surface);border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;font-weight:600;flex-shrink:0}
+#hud .time{color:var(--gold)}
+#hud .rank{color:var(--text2)}
+.city-art{width:100%;display:block;flex-shrink:0}
+#city-header{padding:10px 16px 4px;text-align:center;flex-shrink:0}
+#city-header .flag{font-size:28px}
+#city-header h2{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:700;margin:2px 0 1px}
+#city-header .country{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px}
+#city-body{flex:1;overflow-y:auto;padding:0 14px 6px;display:flex;flex-direction:column;gap:8px}
+#city-desc{font-size:12px;line-height:1.55;color:var(--text2);text-align:center;max-width:440px;margin:0 auto 2px}
+.msg{background:var(--card);border-radius:var(--radius);padding:12px 14px;font-size:13px;line-height:1.55;animation:fadeUp .2s ease}
+.msg.clue{border-left:3px solid var(--gold);background:var(--gold-dim)}
+.msg.alert{border-left:3px solid var(--red);background:var(--red-glow)}
+.msg.info{border-left:3px solid var(--teal);background:var(--teal-dim)}
+.msg .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;color:var(--gold)}
+.msg.alert .lbl{color:var(--red)}
+.msg.info .lbl{color:var(--teal)}
+#actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px;background:var(--surface);border-top:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.act{background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-sm);padding:10px 8px;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:transform .1s,background .15s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;text-align:center}
+.act:active{transform:scale(.96)}
+.act:hover{background:var(--card-hover)}
+.act.primary{background:var(--red);border-color:var(--red);color:#fff}
+.act.primary:hover{background:#a5182f}
+.act.go-back{background:#1a2a25;border-color:var(--teal);color:var(--teal)}
+.act.travel{background:#1a3a33;border-color:var(--teal);color:var(--teal)}
+.act.cold{background:#2a1a1a;border-color:var(--danger);color:var(--danger)}
+.act.full{grid-column:1/-1}
+.act:disabled{opacity:.3;pointer-events:none}
+
+.panel{background:var(--surface);border-radius:var(--radius);padding:18px;width:92%;max-width:440px;max-height:82vh;overflow-y:auto;animation:fadeUp .2s ease;display:flex;flex-direction:column;gap:8px}
+.panel h2{font-family:'Playfair Display',Georgia,serif;font-size:17px;text-align:center;margin-bottom:2px}
+.dest{background:var(--card);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-size:13px;cursor:pointer;text-align:left;transition:background .15s,border-color .15s;font-family:inherit;display:flex;align-items:center;gap:10px}
+.dest:hover{background:var(--card-hover);border-color:var(--teal)}
+.dest:active{transform:scale(.98)}
+.dest .df{font-size:24px}
+.dest .dc{font-weight:600}
+.dest .dk{font-size:11px;color:var(--text2)}
+
+.dsec{margin-bottom:10px}
+.dsec h3{font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid rgba(255,255,255,.06)}
+.trow{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03)}
+.trow .tl{color:var(--text2)}
+.trow .tv{font-weight:600}
+.trow .tv.unk{color:var(--text3);font-style:italic;font-weight:400}
+.scard{background:var(--card);border:1px solid rgba(255,255,255,.05);border-radius:var(--radius-sm);padding:10px;display:flex;align-items:center;gap:10px}
+.scard.elim{opacity:.25}
+.scard.match{border-color:var(--gold);background:var(--gold-dim)}
+.portrait{width:56px;height:auto;border-radius:5px;flex-shrink:0;border:1px solid rgba(255,255,255,.1)}
+.scard .si{flex:1;min-width:0}
+.scard .sn{font-size:13px;font-weight:600}
+.scard .st{font-size:10px;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wbtn{background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.wbtn:active{transform:scale(.95)}
+.wbtn:disabled{opacity:.4;pointer-events:none}
+.elog{font-size:11px;color:var(--text2);line-height:1.5;padding:2px 0;list-style:none}
+.elog li{margin-bottom:3px;padding-left:10px;position:relative}
+.elog li::before{content:'';position:absolute;left:0;top:6px;width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.elog li.sc::before{background:var(--red)}
+
+#s-flight{background:var(--bg);justify-content:center;align-items:center;text-align:center;padding:24px;z-index:40}
+.flight-label{font-family:'Playfair Display',Georgia,serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:14px;animation:fadeUp .3s ease}
+.flight-map{width:100%;max-width:420px;border-radius:var(--radius);border:1px solid rgba(255,255,255,.06);background:#080c12}
+.flight-route{font-size:14px;color:var(--text);margin-top:12px;font-weight:600;animation:fadeUp .4s ease}
+.flight-route .fa{color:var(--gold)}
+.flight-route .arrow{color:var(--teal);margin:0 6px}
+.flight-route .fb{color:var(--teal)}
+.flight-cost{font-size:11px;color:var(--text3);margin-top:4px}
+
+#s-result{background:var(--bg);justify-content:center;align-items:center;text-align:center;padding:24px}
+.rcard{background:var(--surface);border-radius:var(--radius);padding:28px 22px;max-width:440px;width:100%;animation:fadeUp .4s ease}
+.rcard h2{font-family:'Playfair Display',Georgia,serif;font-size:22px;margin-bottom:6px}
+.rcard.win h2{color:var(--teal)}
+.rcard.lose h2{color:var(--danger)}
+.rcard p{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:6px}
+.rcard .ru{color:var(--gold);font-weight:600;font-size:15px;margin:10px 0}
+
+.btn{border:none;border-radius:var(--radius-sm);padding:13px 28px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .1s;min-width:160px;font-family:inherit}
+.btn:active{transform:scale(.96)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:#a5182f}
+.btn-out{background:transparent;border:1px solid var(--text3);color:var(--text)}
+.btn-out:hover{border-color:var(--text2)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseGlow{0%,100%{opacity:.6}50%{opacity:1}}
+@media(max-height:540px){.city-art{max-height:60px}#city-header{padding:6px 14px 2px}#city-header .flag{font-size:20px}#city-header h2{font-size:15px}#city-desc{display:none}}
+</style>
+
+<div id="s-title" class="screen active">
+  <div class="title-globe">🌍</div>
+  <h1>Where in the World?</h1>
+  <p class="sub">An ACME Detective Adventure</p>
+  <div class="diff-row">
+    <button class="diff-chip" data-d="easy">Easy</button>
+    <button class="diff-chip active" data-d="medium">Medium</button>
+    <button class="diff-chip" data-d="hard">Hard</button>
   </div>
+  <div class="diff-desc" id="diff-desc">18 hours · Standard investigation</div>
+  <div class="title-rank" id="title-rank"></div>
+  <button class="btn btn-red" id="btn-new">Accept Your Next Case</button>
+</div>
 
-  <!-- Game Screen -->
-  <div id="screen-game" class="screen">
-    <header id="top-bar">
-      <div class="stat-group">
-        <span class="stat" id="stat-hp" title="Health">❤️ <span id="hp-val">100</span></span>
-        <span class="stat" id="stat-mp" title="Mana">💧 <span id="mp-val">50</span></span>
-      </div>
-      <div class="stat-group">
-        <span class="stat" id="stat-gold" title="Gold">💰 <span id="gold-val">50</span></span>
-        <span class="stat" id="stat-lvl" title="Level">⭐ Lv<span id="lvl-val">1</span></span>
-      </div>
-      <button id="btn-menu" class="btn-icon" title="Menu">☰</button>
-    </header>
-
-    <div id="location-area">
-      <h2 id="location-name">Village Square</h2>
-      <p id="location-desc">The heart of Willowbrook village.</p>
-    </div>
-
-    <div id="npc-area"></div>
-    <div id="nav-area"></div>
-
-    <div id="dialogue-overlay" class="hidden">
-      <div id="dialogue-box">
-        <div id="dialogue-header">
-          <span id="dialogue-portrait"></span>
-          <span id="dialogue-speaker"></span>
-        </div>
-        <div id="dialogue-text"></div>
-        <div id="dialogue-choices"></div>
-        <button id="dialogue-advance" class="btn btn-small hidden">Continue ▶</button>
-      </div>
-    </div>
-
-    <div id="toast" class="hidden"></div>
+<div id="s-briefing" class="screen">
+  <div class="briefing-card">
+    <span class="badge">Urgent Transmission</span>
+    <h2 id="b-title"></h2>
+    <p id="b-body"></p>
+    <p style="color:var(--text2);font-size:12px;margin-bottom:14px" id="b-foot"></p>
+    <button class="btn btn-red" style="width:100%" id="btn-go">Take the Case</button>
   </div>
+</div>
 
-  <!-- Menu Overlay -->
-  <div id="screen-menu" class="screen">
-    <div class="menu-content">
-      <h2>Menu</h2>
-      <button id="btn-inventory" class="btn btn-menu">🎒 Inventory</button>
-      <button id="btn-quests" class="btn btn-menu">📜 Quests</button>
-      <button id="btn-stats" class="btn btn-menu">📊 Stats</button>
-      <button id="btn-save" class="btn btn-menu">💾 Save Game</button>
-      <button id="btn-main-menu" class="btn btn-menu btn-danger">🏠 Main Menu</button>
-      <button id="btn-close-menu" class="btn btn-secondary">Close</button>
-    </div>
-  </div>
+<div id="s-city" class="screen">
+  <div id="hud"><span class="time" id="hud-t"></span><span class="rank" id="hud-r"></span></div>
+  <div id="city-art-wrap"></div>
+  <div id="city-header"><span class="flag" id="c-flag"></span><h2 id="c-name"></h2><span class="country" id="c-country"></span></div>
+  <p id="city-desc"></p>
+  <div id="city-body"></div>
+  <div id="actions"></div>
+</div>
 
-  <!-- Inventory Overlay -->
-  <div id="screen-inventory" class="screen">
-    <div class="panel-content">
-      <h2>🎒 Inventory</h2>
-      <div id="inventory-list"></div>
-      <button id="btn-close-inventory" class="btn btn-secondary">Close</button>
-    </div>
-  </div>
+<div id="s-flight" class="screen">
+  <div id="flight-content"></div>
+</div>
 
-  <!-- Quests Overlay -->
-  <div id="screen-quests" class="screen">
-    <div class="panel-content">
-      <h2>📜 Quests</h2>
-      <div id="quest-list"></div>
-      <button id="btn-close-quests" class="btn btn-secondary">Close</button>
-    </div>
-  </div>
+<div id="s-travel" class="screen overlay">
+  <div class="panel"><h2>✈️ Travel</h2><p style="font-size:12px;color:var(--text2);text-align:center" id="travel-cost"></p><div id="travel-list"></div><button class="btn btn-out" style="width:100%" id="btn-cancel-t">Cancel</button></div>
+</div>
 
-  <!-- Stats Overlay -->
-  <div id="screen-stats" class="screen">
-    <div class="panel-content">
-      <h2>📊 Character Stats</h2>
-      <div id="stats-display"></div>
-      <button id="btn-close-stats" class="btn btn-secondary">Close</button>
-    </div>
-  </div>
+<div id="s-dossier" class="screen overlay">
+  <div class="panel" id="dossier-c"></div>
+</div>
 
-  <!-- Scripts (order matters) -->
-  <script src="www/js/game-state.js"></script>
-  <script src="www/js/characters.js"></script>
-  <script src="www/js/locations.js"></script>
-  <script src="www/js/dialogues.js"></script>
-  <script src="www/js/dialogue-engine.js"></script>
-  <script src="www/js/save-system.js"></script>
-  <script src="www/js/main.js"></script>
-</body>
-</html>
+<div id="s-result" class="screen">
+  <div class="rcard" id="rcard"><h2 id="r-title"></h2><p id="r-body"></p><p class="ru" id="r-rank"></p><button class="btn btn-red" style="margin-top:14px" id="btn-next">Next Case</button></div>
+</div>
+
+<script>
+const CITIES={
+paris:{name:"Paris",country:"France",flag:"🇫🇷",region:"Europe",
+  desc:"The City of Light stretches before you. The Eiffel Tower rises above zinc rooftops, and the scent of fresh baguettes drifts from corner bakeries.",
+  look:["The Louvre houses over 380,000 works of art including the Mona Lisa. Its glass pyramid entrance, controversial when built in 1989, has become an icon.","Along the Seine, bouquinistes — open-air booksellers — have been a tradition since the 16th century. Notre-Dame Cathedral has watched over the river for over 800 years."],
+  clues:["They asked about the exchange rate for euros.","I overheard them talking about a tower built by Gustave Eiffel.","They were learning French phrases — kept saying 'bonjour.'","They asked about museums with famous Renaissance paintings.","They mentioned heading to the 'City of Light.'"]},
+tokyo:{name:"Tokyo",country:"Japan",flag:"🇯🇵",region:"Asia",
+  desc:"Neon signs and ancient temples exist side by side. Shibuya Crossing pulses with thousands of pedestrians while tranquil gardens offer moments of zen.",
+  look:["Tsukiji Outer Market is a feast for the senses. Japan's fishing industry has fed the nation for centuries, and Tokyo remains one of the world's great food capitals.","In Ueno Park, cherry blossoms bloom each spring in a tradition called hanami. The Tokyo National Museum nearby houses Japan's largest collection of art and antiquities."],
+  clues:["They were exchanging money for Japanese yen.","They mentioned wanting to ride the Shinkansen bullet train.","They asked about cherry blossom season — 'sakura,' they called it.","They had a guidebook about Shinto shrines and Buddhist temples.","They were heading to an island nation in the Pacific."]},
+cairo:{name:"Cairo",country:"Egypt",flag:"🇪🇬",region:"Africa",
+  desc:"The Great Pyramids shimmer on the horizon as the city hums with life. Cairo straddles the Nile, blending ancient wonders with a vibrant modern metropolis.",
+  look:["The Great Pyramid of Giza, built around 2560 BCE, was the tallest structure in the world for nearly 4,000 years. The Sphinx has guarded the plateau just as long.","The Egyptian Museum holds treasures including the golden death mask of Tutankhamun. The Nile, flowing 6,650 km, has been Egypt's lifeline for millennia."],
+  clues:["They were fascinated by ancient pyramids and pharaohs.","They asked about cruises on the longest river in Africa.","They mentioned wanting to see hieroglyphics and mummies.","They were researching the Valley of the Kings.","They mentioned a great city on the banks of the Nile."]},
+rio:{name:"Rio de Janeiro",country:"Brazil",flag:"🇧🇷",region:"South America",
+  desc:"Sugar Loaf Mountain rises from the bay and Christ the Redeemer watches from Corcovado. Rio pulses with samba rhythms, golden beaches, and carnival color.",
+  look:["Christ the Redeemer, standing 30 meters tall atop Corcovado mountain, is one of the New Seven Wonders. It was completed in 1931 after nine years of construction.","Copacabana and Ipanema are among the world's most famous beaches. Rio's Carnival draws millions of visitors to watch samba schools compete in spectacular parades."],
+  clues:["They mentioned a giant statue of Christ on a mountaintop.","They asked about Carnival and samba dancing.","They were learning Portuguese phrases.","They mentioned Copacabana Beach and Sugar Loaf Mountain.","They were heading to a coastal city in South America."]},
+sydney:{name:"Sydney",country:"Australia",flag:"🇦🇺",region:"Oceania",
+  desc:"The Opera House's white sails catch the afternoon light across the harbor. Sydney is a sun-drenched metropolis where the Pacific meets stunning coastal cliffs.",
+  look:["The Sydney Opera House, designed by Danish architect Jørn Utzon, hosts over 1,500 performances each year. Its roof tiles were inspired by peeling an orange.","The Harbour Bridge, nicknamed 'The Coathanger,' connects the city's shores. Australia is the only country that is also a continent, home to unique wildlife found nowhere else."],
+  clues:["They mentioned an opera house shaped like sails on a harbor.","They asked about koalas and kangaroos.","They were booking a flight deep into the Southern Hemisphere.","They mentioned climbing a famous harbor bridge.","They were heading to a continent that's also a country."]},
+london:{name:"London",country:"England",flag:"🇬🇧",region:"Europe",
+  desc:"Big Ben chimes over the Thames as black cabs weave through centuries of history. London has been a world capital of finance, theatre, and tea since the Romans.",
+  look:["The Tower of London has served as palace, prison, and treasury since 1066. The Crown Jewels are still kept here under heavy guard.","The British Museum houses over 8 million works, including the Rosetta Stone. Admission is free — a tradition since the museum's founding in 1753."],
+  clues:["They mentioned Big Ben and the Houses of Parliament.","They were exchanging money for pounds sterling.","They asked about the changing of the guard at Buckingham Palace.","They mentioned riding a red double-decker bus.","They were heading to a city on the River Thames."]},
+mumbai:{name:"Mumbai",country:"India",flag:"🇮🇳",region:"Asia",
+  desc:"The Gateway of India rises at the waterfront while tiffin-wallahs deliver millions of lunches through bustling streets. Mumbai is the heart of Bollywood.",
+  look:["The Gateway of India, built in 1924, is Mumbai's most iconic landmark. The city's dabbawalas deliver over 200,000 home-cooked lunches daily with near-perfect accuracy.","Bollywood produces over 1,500 films per year — more than Hollywood. Mumbai's local trains carry 7.5 million commuters daily."],
+  clues:["They mentioned the Gateway of India.","They were exchanging money for Indian rupees.","They asked about Bollywood film studios.","They mentioned a bustling city on India's west coast.","They were practicing 'namaste.'"]},
+marrakech:{name:"Marrakech",country:"Morocco",flag:"🇲🇦",region:"Africa",
+  desc:"The Red City glows in the afternoon sun. The ancient medina is a labyrinth of narrow alleys, vibrant souks, and the call to prayer echoing from minarets.",
+  look:["Jemaa el-Fnaa, the main square, transforms from daytime market to open-air kitchen at dusk. Snake charmers and storytellers have performed here for a thousand years.","The souks are organized by trade — leatherworkers, spice merchants, metalworkers — a system unchanged since medieval times. The Atlas Mountains rise to over 4,000 meters nearby."],
+  clues:["They mentioned a famous marketplace called a souk.","They asked about the Atlas Mountains.","They were excited about a city known for its red walls.","They mentioned drinking traditional mint tea.","They were heading to a North African kingdom."]},
+bangkok:{name:"Bangkok",country:"Thailand",flag:"🇹🇭",region:"Asia",
+  desc:"Golden temple spires pierce the tropical sky above a city of canals and night markets. Bangkok is a sensory overload of ornate architecture and sizzling street food.",
+  look:["Wat Phra Kaew, the Temple of the Emerald Buddha, sits within the Grand Palace and is Thailand's most sacred Buddhist temple, established in 1782.","Bangkok's street food is legendary. The city was once called the 'Venice of the East' for its canal system, which still serves as a transport network today."],
+  clues:["They mentioned ornate Buddhist temples with golden spires.","They were exchanging money for Thai baht.","They asked about floating markets and street food.","They were heading to the capital of a Southeast Asian kingdom.","They mentioned wanting to ride in a tuk-tuk."]},
+rome:{name:"Rome",country:"Italy",flag:"🇮🇹",region:"Europe",
+  desc:"The Eternal City layers three thousand years of history beneath your feet. The Colosseum casts long shadows at sunset while Vespas zip past ancient fountains.",
+  look:["The Colosseum, completed in 80 CE, could seat 50,000 spectators. It pioneered the use of arches and concrete — engineering principles still used today.","Tossing a coin into the Trevi Fountain is said to ensure your return. The Vatican, the world's smallest state, houses Michelangelo's Sistine Chapel ceiling."],
+  clues:["They mentioned the Colosseum and ancient gladiators.","They were exchanging euros and dreaming of pasta.","They asked about visiting the Vatican.","They mentioned throwing coins in a famous Baroque fountain.","They were brushing up on Italian — 'ciao, bella!'"]},
+mexico_city:{name:"Mexico City",country:"Mexico",flag:"🇲🇽",region:"North America",
+  desc:"Built on the ruins of Aztec Tenochtitlan, Mexico City is one of the world's largest metropolises. Ancient pyramids, murals, and the aroma of street tacos define this city of layers.",
+  look:["The Zócalo, one of the world's largest public squares, sits directly above Aztec Templo Mayor ruins, discovered by chance in 1978 by electrical workers.","Frida Kahlo's Casa Azul is now a museum. Mexico City sits at 2,240 meters above sea level, making it one of the highest capitals in the world."],
+  clues:["They mentioned ancient Aztec pyramids and ruins.","They were exchanging money for Mexican pesos.","They asked about a famous painter in a blue house.","They mentioned a city built on Tenochtitlan.","They were practicing their Spanish."]},
+istanbul:{name:"Istanbul",country:"Turkey",flag:"🇹🇷",region:"Europe",
+  desc:"Minarets and church domes share the skyline in the only city spanning two continents. Istanbul straddles the Bosphorus, connecting Europe and Asia.",
+  look:["The Hagia Sophia has been a cathedral, mosque, and museum across 1,500 years. Its massive dome was an architectural marvel that influenced builders for centuries.","The Grand Bazaar is one of the world's oldest covered markets, with over 4,000 shops across 61 streets. Refusing Turkish tea or coffee is considered impolite."],
+  clues:["They mentioned a city straddling two continents.","They asked about the Hagia Sophia and Blue Mosque.","They were exchanging money for Turkish lira.","They mentioned one of the world's oldest bazaars.","They asked about a strait connecting the Black Sea to the Mediterranean."]},
+nairobi:{name:"Nairobi",country:"Kenya",flag:"🇰🇪",region:"Africa",
+  desc:"Skyscrapers rise beside a national park where lions roam within sight of the city. Nairobi is East Africa's largest city, a tech hub and safari gateway.",
+  look:["Nairobi National Park is the only wildlife reserve within a major capital. Giraffes, zebras, and rhinos roam against a backdrop of skyscrapers.","Kenya's Great Rift Valley stretches 6,000 km from Lebanon to Mozambique. It's so vast it can be seen from space, and its lakes support millions of flamingos."],
+  clues:["They mentioned going on an African safari.","They asked about the Great Rift Valley.","They were exchanging money for Kenyan shillings.","They mentioned a city where you can see lions from downtown.","They asked about the 'Big Five' — lion, leopard, elephant, buffalo, rhino."]},
+reykjavik:{name:"Reykjavik",country:"Iceland",flag:"🇮🇸",region:"Europe",
+  desc:"The world's northernmost capital sits where tectonic plates pull apart. Reykjavik is a city of hot springs, Northern Lights, and alien landscapes.",
+  look:["Iceland sits on the Mid-Atlantic Ridge where two tectonic plates meet. Geothermal energy heats 90% of homes — you can swim outdoors in naturally heated pools even in winter.","The Northern Lights are visible from September to April. Iceland's landscape includes active volcanoes, glaciers covering 11% of the land, and geysers — the word itself comes from Icelandic."],
+  clues:["They mentioned the Northern Lights — the aurora borealis.","They asked about geysers and natural hot springs.","They were excited about glaciers and volcanoes in the same country.","They mentioned a city near the Arctic Circle.","They were heading to a 'land of fire and ice.'"]},
+buenos_aires:{name:"Buenos Aires",country:"Argentina",flag:"🇦🇷",region:"South America",
+  desc:"Tango drifts from the milongas of San Telmo as grilling steak fills the evening air. Buenos Aires is South America's most European-feeling city.",
+  look:["La Boca, with its brightly painted buildings, is the birthplace of tango. The dance originated in the port neighborhoods of the 1880s.","Buenos Aires has the widest avenue in the world — Avenida 9 de Julio spans 140 meters. The Teatro Colón is considered one of the world's finest opera houses."],
+  clues:["They mentioned tango dancing in cobblestone streets.","They were exchanging money for Argentine pesos.","They asked about the best parrillas — steakhouses.","They called their destination the 'Paris of South America.'","They mentioned a city on the Río de la Plata."]},
+new_york:{name:"New York",country:"USA",flag:"🇺🇸",region:"North America",
+  desc:"The city that never sleeps towers above the Hudson. Lady Liberty holds her torch high while yellow cabs stream through canyon-like streets below.",
+  look:["The Statue of Liberty, a gift from France in 1886, stands 93 meters tall. Her torch was the first thing millions of immigrants saw arriving at nearby Ellis Island.","Central Park spans 341 hectares in the heart of Manhattan. Its creation in 1858 required moving more earth than the digging of the Panama Canal."],
+  clues:["They mentioned wanting to see a giant green statue holding a torch.","They were looking forward to Broadway shows and bright lights.","They asked about a park in the middle of an island of skyscrapers.","They mentioned Times Square and the Empire State Building.","They were heading to a city called the Big Apple."]},
+beijing:{name:"Beijing",country:"China",flag:"🇨🇳",region:"Asia",
+  desc:"Ancient palaces meet modern megacity. The Forbidden City's 9,999 rooms whisper of imperial dynasties while the Great Wall snakes across mountains on the horizon.",
+  look:["The Forbidden City served as the imperial palace for 500 years, housing 24 emperors. Its 9,999 rooms were said to be one fewer than heaven's 10,000, out of respect.","The Great Wall stretches over 21,000 km across northern China. Contrary to myth, it can't be seen from space, but it remains the longest structure ever built."],
+  clues:["They mentioned the Great Wall — one of the longest structures ever built.","They were exchanging money for Chinese yuan.","They asked about a palace with thousands of rooms.","They mentioned wanting to try authentic Peking duck.","They were heading to an ancient capital in East Asia."]},
+moscow:{name:"Moscow",country:"Russia",flag:"🇷🇺",region:"Europe",
+  desc:"Colorful onion domes rise above snowy boulevards. Red Square has witnessed centuries of parades while the Kremlin's walls guard the seat of power.",
+  look:["St. Basil's Cathedral, with its nine colorful onion domes, was commissioned by Ivan the Terrible in 1555. Legend says he blinded the architects so they could never surpass it.","The Moscow Metro is one of the world's deepest subway systems, with stations decorated like underground palaces — chandeliers, mosaics, and marble columns. Over 9 million ride it daily."],
+  clues:["They mentioned colorful onion-domed churches.","They were exchanging money for Russian rubles.","They asked about Red Square and the Kremlin.","They mentioned the world's most beautiful subway stations.","They were heading to the largest country on Earth."]},
+lima:{name:"Lima",country:"Peru",flag:"🇵🇪",region:"South America",
+  desc:"Colonial Lima opens onto the Pacific while the ghost of the Inca Empire lingers in the mountains beyond. Peru's capital is a food lover's paradise and the gateway to Machu Picchu.",
+  look:["Lima's historic center is a UNESCO site with ornate colonial churches dating to the 1500s. The Plaza Mayor has been the city's center since Pizarro founded it in 1535.","Peru is one of the world's great food capitals. Ceviche — raw fish cured in citrus — originated here, and Lima has more top restaurants than any other South American city."],
+  clues:["They mentioned ancient Inca ruins high in the mountains.","They were exchanging money for Peruvian soles.","They asked about a lost city hidden in the clouds.","They mentioned ceviche and South American cuisine.","They were heading to a Pacific coast capital in South America."]},
+athens:{name:"Athens",country:"Greece",flag:"🇬🇷",region:"Europe",
+  desc:"The cradle of democracy shimmers in the Mediterranean sun. The Parthenon crowns the Acropolis above a city where philosophy, theater, and the Olympics were born.",
+  look:["The Parthenon, built in 447 BCE, was dedicated to goddess Athena. Despite centuries of damage, its Doric columns still define classical architecture.","Athens hosted the first modern Olympic Games in 1896, reviving a tradition from 776 BCE. The ancient games ran every four years for over a thousand years."],
+  clues:["They mentioned the birthplace of democracy and philosophy.","They were exchanging euros near the Mediterranean.","They asked about ancient temples on a hilltop acropolis.","They mentioned where the Olympic Games began.","They were heading to a city named after a goddess."]},
+havana:{name:"Havana",country:"Cuba",flag:"🇨🇺",region:"North America",
+  desc:"Vintage American cars cruise past faded colonial mansions. Havana moves to the rhythm of son and salsa, its streets alive with music and the salt-tinged breeze off the Malecón.",
+  look:["Havana's fleet of 1950s American cars survived decades of trade embargoes through ingenious repairs. These 'almendrones' now serve as iconic taxis.","The Malecón, Havana's 8-km seawall promenade, is called the city's living room. At sunset, thousands gather to socialize, fish, and watch the waves."],
+  clues:["They mentioned vintage 1950s American cars on every street.","They asked about hand-rolled cigars and salsa dancing.","They mentioned a Caribbean island nation.","They were fascinated by a city frozen in time.","They mentioned a seawall promenade called the Malecón."]},
+dubai:{name:"Dubai",country:"UAE",flag:"🇦🇪",region:"Asia",
+  desc:"A city conjured from desert sand in barely two generations. The Burj Khalifa pierces the clouds at 828 meters while artificial islands reshape the coastline.",
+  look:["The Burj Khalifa is the world's tallest building at 828 meters — over twice the Empire State Building. Its design was inspired by a desert flower called the Hymenocallis.","Palm Jumeirah is an artificial island shaped like a palm tree, visible from space. Dubai also features an indoor ski slope and the world's largest shopping mall."],
+  clues:["They mentioned the world's tallest building.","They were exchanging money for UAE dirhams.","They asked about artificial islands shaped like palm trees.","They mentioned a city that rose from the desert.","They were heading to a luxury city on the Persian Gulf."]},
+lisbon:{name:"Lisbon",country:"Portugal",flag:"🇵🇹",region:"Europe",
+  desc:"Lisbon tumbles down seven hills toward the Tagus River, tile-covered facades catching golden Atlantic light. Europe's sunniest capital breathes fado music and custard tarts.",
+  look:["Lisbon's iconic yellow trams have climbed the steep hills since 1873. Tram 28 winds through neighborhoods so narrow the walls nearly brush the windows.","Portuguese explorers launched the Age of Discovery from Lisbon's Belém waterfront. The Tower of Belém watched Vasco da Gama depart for India and Magellan sail around the world."],
+  clues:["They mentioned riding a famous yellow tram through steep streets.","They were exchanging euros in a coastal Iberian country.","They asked about pastéis de nata — famous custard tarts.","They mentioned the Age of Exploration and famous navigators.","They were heading to a hilly city on the Atlantic coast."]},
+amsterdam:{name:"Amsterdam",country:"Netherlands",flag:"🇳🇱",region:"Europe",
+  desc:"Gabled canal houses reflect in still water. Amsterdam is built on water — bicycles outnumber people, tulips brighten market stalls, and museums hold masterpieces by Rembrandt and Van Gogh.",
+  look:["Amsterdam has over 100 km of canals, 1,500 bridges, and 2,500 houseboats. The canal ring is a UNESCO site, built during the Dutch Golden Age when Amsterdam was the world's richest city.","The Rijksmuseum houses Rembrandt's 'Night Watch.' The Van Gogh Museum next door holds the world's largest collection of his work — over 200 paintings and 500 drawings."],
+  clues:["They mentioned canals and bicycles everywhere.","They were exchanging euros in a low-lying northern country.","They asked about paintings by Rembrandt and Van Gogh.","They mentioned a city famous for tulips.","They were heading to a country partly below sea level."]},
+seoul:{name:"Seoul",country:"South Korea",flag:"🇰🇷",region:"Asia",
+  desc:"Neon-lit streets pulse with K-pop while ancient palace gates stand serene across the avenue. Seoul is where Confucian tradition meets cutting-edge technology.",
+  look:["Gyeongbokgung Palace, built in 1395, was the main royal palace of the Joseon dynasty. The daily Changing of the Guard has been reenacted since 1996 in traditional costume.","The DMZ with North Korea lies just 50 km north. The border is one of the most heavily fortified in the world, yet it has become an unintentional nature preserve."],
+  clues:["They mentioned K-pop music and Korean street food.","They were exchanging money for South Korean won.","They asked about ancient palaces and modern technology side by side.","They mentioned the most heavily fortified border in the world.","They were heading to a high-tech East Asian capital."]},
+tashkent:{name:"Tashkent",country:"Uzbekistan",flag:"🇺🇿",region:"Asia",
+  desc:"The heart of the ancient Silk Road beats in a modern Central Asian capital. Turquoise-tiled mosques and Soviet-era monuments share space beneath the Tien Shan mountains.",
+  look:["Tashkent's Chorsu Bazaar has been a trading hub for over 2,000 years. Under its massive blue dome, merchants sell spices, dried fruits, and bread baked in tandoor ovens — just as they did when caravans crossed the Silk Road.","The Tashkent Metro, built in 1977, doubles as an art gallery. Each station has a unique theme — from cotton harvests to space exploration. Photography was forbidden until 2018, adding to its mystique."],
+  clues:["They mentioned the ancient Silk Road and caravans carrying spices.","They were exchanging money for Uzbek som.","They asked about turquoise-tiled mosques and madrasas.","They mentioned a city at the crossroads of ancient trade routes.","They were heading to a Central Asian capital near the Tien Shan mountains."]},
+montevideo:{name:"Montevideo",country:"Uruguay",flag:"🇺🇾",region:"South America",
+  desc:"A relaxed coastal capital on the Río de la Plata where mate tea is a way of life. Montevideo mixes Art Deco grandeur, candombe drum circles, and endless seafront sunsets.",
+  look:["Montevideo hosted the first-ever FIFA World Cup in 1930 — and Uruguay won. The Estadio Centenario, built for the tournament, is now a national monument and football museum.","The Mercado del Puerto, a cast-iron market from 1868, is one of South America's great food halls. Live candombe — Afro-Uruguayan drum music — echoes through the Barrio Sur neighborhood every weekend."],
+  clues:["They asked about mate tea and the special gourd used to drink it.","They mentioned the first country to win the World Cup.","They were exchanging money for Uruguayan pesos.","They asked about a relaxed coastal capital south of Brazil.","They were heading to a city on the Río de la Plata in South America."]},
+perth:{name:"Perth",country:"Australia",flag:"🇦🇺",region:"Oceania",
+  desc:"The world's most isolated major city basks in endless sunshine on Australia's western coast. Perth overlooks the Indian Ocean with pristine beaches and ancient Aboriginal heritage.",
+  look:["Kings Park is one of the world's largest inner-city parks, home to over 3,000 species of unique Western Australian wildflowers. Noongar people have cared for this land — called Kaarta Gar-up — for over 45,000 years.","Rottnest Island, just off the coast, is home to the quokka — a small marsupial known as the 'happiest animal in the world' for its seemingly smiling face. The island has no cars."],
+  clues:["They mentioned the most isolated city on Earth.","They were exchanging money for Australian dollars.","They asked about unique marsupials called quokkas.","They mentioned endless sunshine on a western coast.","They were heading to a remote city on the Indian Ocean."]},
+kigali:{name:"Kigali",country:"Rwanda",flag:"🇷🇼",region:"Africa",
+  desc:"Africa's cleanest city rises across a thousand green hills. Kigali's transformation from tragedy to one of the continent's most innovative capitals is one of the great stories of resilience.",
+  look:["Rwanda is called the 'Land of a Thousand Hills.' Kigali sprawls across several of them, with views of misty valleys in every direction. The city bans plastic bags entirely — part of why it's famously spotless.","Volcanoes National Park, just two hours north, is home to endangered mountain gorillas. Dian Fossey spent 18 years studying them here, inspiring the book and film 'Gorillas in the Mist.'"],
+  clues:["They mentioned tracking mountain gorillas in misty volcanoes.","They were exchanging money for Rwandan francs.","They asked about a city known as the cleanest in Africa.","They mentioned a country called the 'Land of a Thousand Hills.'","They were heading to a green, hilly capital in East Africa."]}
+};
+
+const SUSPECTS=[
+{id:0,name:"Patty Larceny",hair:"red",food:"chocolate",hobby:"violin",feature:"a scar across their cheek",
+  traitText:{hair:"The suspect had striking red hair — impossible to miss.",food:"They were eating chocolate — had wrappers everywhere.",hobby:"I saw a violin case in their luggage. They said they never travel without it.",feature:"I noticed a distinctive scar across their left cheek."}},
+{id:1,name:"Nick Brunch",hair:"dark",food:"sushi",hobby:"chess",feature:"a monocle",
+  traitText:{hair:"The suspect had dark hair, slicked back neatly.",food:"They were at a sushi restaurant, ordering the omakase without hesitation.",hobby:"I spotted them playing speed chess at a café, beating everyone.",feature:"They wore a monocle — like something from another century."}},
+{id:2,name:"Sarah Nade",hair:"blonde",food:"pasta",hobby:"violin",feature:"a snake tattoo on their neck",
+  traitText:{hair:"Definitely blonde hair — it caught the light.",food:"They asked me where to find the best pasta in the city.",hobby:"They mentioned needing to practice violin — said they were classically trained.",feature:"They had a tattoo of a coiled snake on their neck."}},
+{id:3,name:"Rob M. Blind",hair:"red",food:"pasta",hobby:"yoga",feature:"a cowboy hat",
+  traitText:{hair:"Hard to forget that red hair — bright as a fire engine.",food:"They were twirling pasta at a sidewalk café, very particular about the sauce.",hobby:"I saw them doing yoga stretches at the airport gate — right there on the floor.",feature:"They were wearing a cowboy hat — unusual for this part of the world."}},
+{id:4,name:"Carrie D'Away",hair:"dark",food:"chocolate",hobby:"yoga",feature:"a red silk scarf",
+  traitText:{hair:"The suspect had dark hair pulled back in a bun.",food:"They bought an armload of fancy chocolate from a local shop.",hobby:"They asked about nearby yoga studios — said they practice every morning.",feature:"They wore a bright red silk scarf around their neck."}},
+{id:5,name:"Justin Credible",hair:"blonde",food:"sushi",hobby:"chess",feature:"a gold tooth",
+  traitText:{hair:"Blonde hair, kind of messy — like a surfer.",food:"They were very particular about their sushi — sent it back twice.",hobby:"They challenged the hotel concierge to chess and won in six moves.",feature:"When they smiled, I noticed a gold tooth — front left."}},
+{id:6,name:"Dee Cryption",hair:"red",food:"sushi",hobby:"yoga",feature:"round glasses",
+  traitText:{hair:"Fiery red hair, swept to one side. Very distinctive.",food:"They were eating sushi alone at the bar, very refined about it.",hobby:"They were doing a headstand in the park — impressive flexibility.",feature:"They wore round glasses — very distinctive, almost like a disguise."}},
+{id:7,name:"Sly Fox",hair:"dark",food:"pasta",hobby:"violin",feature:"an eye patch",
+  traitText:{hair:"Dark hair, long and loose — almost touched their shoulders.",food:"They had a pasta cookbook sticking out of their bag.",hobby:"They were humming a violin sonata — said they play in a private quartet.",feature:"They wore an eye patch over their left eye. Very distinctive."}},
+{id:8,name:"Mona Liszt",hair:"blonde",food:"chocolate",hobby:"chess",feature:"a pearl necklace",
+  traitText:{hair:"Blonde hair, very sleek and polished.",food:"They had a bar of dark chocolate in their coat pocket — said it's imported.",hobby:"They had a travel chess set and were analyzing famous games.",feature:"They wore a stunning pearl necklace — it caught the light beautifully."}},
+{id:9,name:"Baron von Loot",hair:"red",food:"pasta",hobby:"chess",feature:"a top hat",
+  traitText:{hair:"Unmistakable red hair, curly and wild.",food:"They were lecturing a waiter about proper al dente pasta.",hobby:"They were reading a chess strategy book — said they play competitively.",feature:"They were wearing a top hat — like a Victorian gentleman."}},
+{id:10,name:"Contessa",hair:"dark",food:"sushi",hobby:"violin",feature:"a butterfly brooch",
+  traitText:{hair:"Dark hair cut short, very professional-looking.",food:"They asked the hotel for the best sushi in town — said it's their obsession.",hobby:"They had a violin case with gold initials on it.",feature:"They wore an ornate butterfly brooch on their lapel — it sparkled."}},
+{id:11,name:"Felix LaRue",hair:"blonde",food:"chocolate",hobby:"yoga",feature:"a handlebar mustache",
+  traitText:{hair:"Short blonde hair, almost platinum.",food:"They were comparing chocolate shops — said they're a connoisseur.",hobby:"They asked about a sunrise yoga class — said it's their daily ritual.",feature:"They had a remarkable handlebar mustache — waxed to perfection."}}
+];
+
+const ITEMS=[
+{name:"The Star of Mumbai",origin:"mumbai",desc:"a legendary 563-carat sapphire"},
+{name:"Cleopatra's Emerald Scarab",origin:"cairo",desc:"a priceless emerald pendant from ancient Egypt"},
+{name:"Leonardo's Lost Notebook",origin:"rome",desc:"a recently discovered manuscript by da Vinci"},
+{name:"The Emperor's Jade Seal",origin:"tokyo",desc:"an ancient imperial seal carved from flawless jade"},
+{name:"The Crown of Montezuma",origin:"mexico_city",desc:"a golden headdress adorned with quetzal feathers"},
+{name:"The Viking Sunstone",origin:"reykjavik",desc:"a legendary crystal used by Norse navigators"},
+{name:"The Rosetta Fragment",origin:"london",desc:"a newly discovered piece of the famous stone"},
+{name:"The Golden Rhino",origin:"nairobi",desc:"a golden figurine from a medieval African kingdom"},
+{name:"Cristo's Lost Crown",origin:"rio",desc:"a jeweled crown from the base of the famous statue"},
+{name:"The Sultan's Diamond Dagger",origin:"istanbul",desc:"an ornate dagger studded with rare diamonds"},
+{name:"The Tango Master's Bandoneón",origin:"buenos_aires",desc:"a legendary instrument played by Piazzolla himself"},
+{name:"The Siam Ruby Necklace",origin:"bangkok",desc:"a royal ruby necklace from the ancient Siamese court"},
+{name:"The Saharan Star Map",origin:"marrakech",desc:"an ancient astronomical chart etched on gold leaf"},
+{name:"The Harbour Pearl",origin:"sydney",desc:"a flawless black pearl the size of a golf ball"},
+{name:"The Impressionist's Palette",origin:"paris",desc:"Monet's personal palette, still bearing his last colors"},
+{name:"Hamilton's Gold Watch",origin:"new_york",desc:"Alexander Hamilton's personal pocket watch"},
+{name:"The Dragon Emperor's Scroll",origin:"beijing",desc:"an imperial scroll of lost martial arts techniques"},
+{name:"The Fabergé Snowflake",origin:"moscow",desc:"a miniature Fabergé egg encrusted with diamond snowflakes"},
+{name:"The Inca Sun Disk",origin:"lima",desc:"a golden disk representing Inti, the Incan sun god"},
+{name:"Athena's Silver Owl",origin:"athens",desc:"a silver statuette of the sacred owl of wisdom"},
+{name:"The Hemingway Manuscript",origin:"havana",desc:"an unpublished novella found in Hemingway's study"},
+{name:"The Desert Star Tiara",origin:"dubai",desc:"a platinum tiara set with the rarest pink diamonds"},
+{name:"Magellan's Astrolabe",origin:"lisbon",desc:"the instrument that guided the first circumnavigation"},
+{name:"Vermeer's Lost Canvas",origin:"amsterdam",desc:"a recently discovered painting by the Dutch master"},
+{name:"The Joseon Phoenix Crown",origin:"seoul",desc:"a ceremonial crown adorned with jade phoenixes"},
+{name:"The Silk Road Compass",origin:"tashkent",desc:"a golden astrolabe from the age of Tamerlane"},
+{name:"The Gaucho's Silver Stirrups",origin:"montevideo",desc:"ornate sterling stirrups from a legendary gaucho general"},
+{name:"The Black Swan Opal",origin:"perth",desc:"a massive black opal shaped like a swan"},
+{name:"The Mountain Gorilla Pendant",origin:"kigali",desc:"a carved emerald pendant depicting an endangered gorilla"}
+];
+
+const RANKS=["Gumshoe","Sleuth","Investigator","Detective","Ace Detective","Super Sleuth","Master Detective"];
+const CATS=["hair","food","hobby","feature"];
+const CIDS=Object.keys(CITIES);
+const INTROS=["A street vendor recalled:","The hotel concierge mentioned:","A taxi driver told you:","A local shopkeeper said:","An airport worker remembered:","A tour guide shared:","A café barista recalled:","A dock worker noted:","A newspaper vendor said:","A museum guard mentioned:","A bus driver told you:","A porter remembered:"];
+
+const DIFF={
+  easy:{hours:22,travel:2,trail:4,decoys:2,label:"Easy",desc:"22 hours · Cheap flights · Fewer decoys"},
+  medium:{hours:18,travel:3,trail:4,decoys:3,label:"Medium",desc:"18 hours · Standard investigation"},
+  hard:{hours:16,travel:3,trail:5,decoys:4,label:"Hard",desc:"16 hours · Long trail · More decoys"}
+};
+const CAT_LABELS={hair:"Hair",food:"Favorite Food",hobby:"Hobby",feature:"Distinguishing Feature"};
+
+const ART={
+paris:['#1a1a3e','#2d1b4e','#1a2a1a','<path d="M160 6L150 48h-6l-4 6h40l-4-6h-6Z" fill="#b89030" opacity=".6"/><rect x="158" y="2" width="4" height="6" fill="#c8a040" opacity=".65"/><path d="M150 48l-2 4h24l-2-4Z" fill="#a08028" opacity=".5"/><path d="M153 36h14v-1h-14Z" fill="#d4b050" opacity=".3"/><path d="M155 26h10v-1h-10Z" fill="#d4b050" opacity=".3"/><rect x="38" y="30" width="18" height="33" fill="#252545" opacity=".7"/><rect x="40" y="32" width="4" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="48" y="32" width="4" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="40" y="42" width="4" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="48" y="42" width="4" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="62" y="36" width="14" height="27" fill="#252545" opacity=".6"/><rect x="64" y="38" width="3" height="5" rx="1" fill="#3a3a6a" opacity=".4"/><rect x="70" y="38" width="3" height="5" rx="1" fill="#3a3a6a" opacity=".4"/><rect x="82" y="42" width="12" height="21" fill="#2a2a4a" opacity=".5"/><rect x="100" y="38" width="10" height="25" fill="#2a2a4a" opacity=".4"/><rect x="230" y="34" width="20" height="29" fill="#252545" opacity=".65"/><rect x="232" y="36" width="5" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="242" y="36" width="5" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="232" y="46" width="5" height="6" rx="1" fill="#3a3a6a" opacity=".5"/><rect x="256" y="40" width="16" height="23" fill="#252545" opacity=".55"/><rect x="278" y="44" width="18" height="19" fill="#2a2a4a" opacity=".5"/><rect x="280" y="46" width="4" height="5" rx="1" fill="#3a3a6a" opacity=".4"/><rect x="288" y="46" width="4" height="5" rx="1" fill="#3a3a6a" opacity=".4"/><path d="M20 63Q25 56 30 63" fill="none" stroke="#2a4a2a" stroke-width="2" opacity=".3"/><path d="M290 58Q296 48 302 58" fill="none" stroke="#2a4a2a" stroke-width="1.5" opacity=".25"/>'],
+tokyo:['#0a0a2e','#1a0a3e','#1a2828','<rect x="48" y="30" width="4" height="33" fill="#888" opacity=".7"/><rect x="68" y="30" width="4" height="33" fill="#888" opacity=".7"/><path d="M44 32h32v-3l-5-5H49l-5 5Z" fill="#8b1a1a" opacity=".7"/><path d="M48 32h24v-2l-3-3H51l-3 3Z" fill="#a02020" opacity=".5"/><rect x="56" y="34" width="8" height="6" fill="#8b1a1a" opacity=".3"/><rect x="58" y="42" width="4" height="8" rx="1" fill="#3a2020" opacity=".4"/><rect x="195" y="14" width="28" height="49" rx="2" fill="#3a3a5a" opacity=".6"/><path d="M188 14h42l-7-10h-28Z" fill="#5a5a7a" opacity=".5"/><rect x="199" y="18" width="5" height="4" rx="1" fill="#6ab" opacity=".4"/><rect x="208" y="18" width="5" height="4" rx="1" fill="#a6b" opacity=".4"/><rect x="199" y="26" width="5" height="4" rx="1" fill="#6ab" opacity=".35"/><rect x="208" y="26" width="5" height="4" rx="1" fill="#b6a" opacity=".35"/><rect x="199" y="34" width="5" height="4" rx="1" fill="#a6b" opacity=".3"/><rect x="208" y="34" width="5" height="4" rx="1" fill="#6ab" opacity=".3"/><rect x="199" y="42" width="14" height="8" rx="1" fill="#333" opacity=".3"/><rect x="140" y="18" width="22" height="45" rx="1" fill="#3a3a5a" opacity=".5"/><rect x="144" y="22" width="4" height="4" rx="1" fill="#8cf" opacity=".3"/><rect x="152" y="22" width="4" height="4" rx="1" fill="#f8c" opacity=".3"/><rect x="144" y="30" width="4" height="4" rx="1" fill="#cf8" opacity=".25"/><path d="M265 48Q275 10 285 48Z" fill="#4a5a6a" opacity=".15"/><path d="M268 48Q275 16 282 48Z" fill="#5a6a7a" opacity=".12"/><rect x="100" y="38" width="16" height="25" rx="1" fill="#2a2a4a" opacity=".4"/><rect x="240" y="32" width="14" height="31" rx="1" fill="#2a2a4a" opacity=".35"/>'],
+cairo:['#3a2a1a','#5a3a1a','#c4a870','<path d="M115 63L152 18l37 45Z" fill="#c4a35a" opacity=".55"/><path d="M120 63L152 24l32 39Z" fill="#b89040" opacity=".35"/><path d="M152 18l2-3l2 3Z" fill="#d4b060" opacity=".4"/><path d="M126 50l8-12l8 12Z" fill="#a88040" opacity=".15"/><path d="M140 42l4-6l4 6Z" fill="#a88040" opacity=".12"/><path d="M190 63L218 32l28 31Z" fill="#b89040" opacity=".45"/><path d="M196 63L218 38l22 25Z" fill="#a88030" opacity=".3"/><path d="M76 63L94 44l18 19Z" fill="#a88040" opacity=".3"/><path d="M80 63L94 48l14 15Z" fill="#987030" opacity=".2"/><circle cx="52" cy="14" r="11" fill="#f0e68c" opacity=".2"/><circle cx="52" cy="14" r="8" fill="#f0d860" opacity=".12"/><path d="M60 56h30v7H60Z" fill="#b89040" opacity=".12"/><rect x="64" y="52" width="4" height="11" fill="#c4a050" opacity=".15"/><rect x="72" y="50" width="4" height="13" fill="#c4a050" opacity=".12"/><rect x="80" y="54" width="4" height="9" fill="#c4a050" opacity=".1"/><path d="M250 60Q256 52 260 48Q264 52 268 60Z" fill="#8a7a50" opacity=".15"/><path d="M270 58Q278 46 284 42Q288 46 294 58Z" fill="#8a7a50" opacity=".12"/>'],
+rio:['#0a2a3a','#1a4a3a','#1a4a2a','<path d="M145 63Q162 8 180 63Z" fill="#1a5a2a" opacity=".7"/><path d="M150 63Q162 18 175 63Z" fill="#2a6a3a" opacity=".5"/><path d="M158 63Q162 28 168 63Z" fill="#3a7a4a" opacity=".35"/><rect x="160" y="14" width="4" height="14" fill="#ddd" opacity=".65"/><line x1="154" y1="20" x2="170" y2="20" stroke="#ddd" stroke-width="2.5" opacity=".6"/><line x1="156" y1="23" x2="168" y2="23" stroke="#ddd" stroke-width="1" opacity=".3"/><path d="M240 63Q256 28 272 63Z" fill="#2a6a3a" opacity=".5"/><path d="M246 63Q256 36 266 63Z" fill="#3a7a4a" opacity=".35"/><path d="M46 63Q60 36 74 63Z" fill="#2a5a3a" opacity=".4"/><path d="M50 63Q60 42 70 63Z" fill="#3a6a4a" opacity=".3"/><path d="M90 63Q100 48 110 63Z" fill="#2a5a3a" opacity=".3"/><path d="M200 63Q210 45 220 63Z" fill="#2a6a3a" opacity=".25"/><path d="M18 55Q22 52 26 55Q30 50 34 55" fill="none" stroke="#2a5a5a" stroke-width="1" opacity=".3"/><path d="M286 52Q290 48 294 52Q298 46 302 52" fill="none" stroke="#2a5a5a" stroke-width="1" opacity=".25"/>'],
+sydney:['#1a3a5a','#0a2a4a','#1a3050','<path d="M127 58Q133 26 146 58" fill="#dde" opacity=".65"/><path d="M130 58Q134 32 144 58" fill="#ccd" opacity=".45"/><path d="M143 58Q150 18 162 58" fill="#dde" opacity=".6"/><path d="M147 58Q151 28 160 58" fill="#ccd" opacity=".4"/><path d="M158 58Q164 30 174 58" fill="#dde" opacity=".5"/><path d="M161 58Q165 38 172 58" fill="#ccd" opacity=".35"/><path d="M174 58Q178 40 184 58" fill="#dde" opacity=".4"/><path d="M50 52Q92 20 134 52" fill="none" stroke="#667" stroke-width="3.5" opacity=".6"/><path d="M54 52Q92 24 130 52" fill="none" stroke="#556" stroke-width="2" opacity=".35"/><path d="M65 50Q92 30 119 50" fill="none" stroke="#445" stroke-width="1" opacity=".2"/><rect x="200" y="34" width="18" height="29" fill="#2a3a5a" opacity=".4"/><rect x="202" y="36" width="4" height="5" rx="1" fill="#4a5a7a" opacity=".35"/><rect x="210" y="36" width="4" height="5" rx="1" fill="#4a5a7a" opacity=".35"/><rect x="224" y="40" width="14" height="23" fill="#2a3a5a" opacity=".35"/><rect x="244" y="44" width="12" height="19" fill="#2a3a4a" opacity=".3"/><rect x="268" y="48" width="16" height="15" fill="#2a3a4a" opacity=".25"/>'],
+london:['#1a2a3a','#2a3a4a','#2a3040','<rect x="150" y="8" width="16" height="55" fill="#4a5a6a" opacity=".7"/><rect x="146" y="5" width="24" height="7" fill="#5a6a7a" opacity=".6"/><rect x="155" y="3" width="6" height="4" fill="#5a6a7a" opacity=".5"/><circle cx="158" cy="14" r="5" fill="#f0e68c" opacity=".2"/><circle cx="158" cy="14" r="3" fill="#f0e68c" opacity=".15"/><rect x="148" y="28" width="4" height="3" fill="#5a6a7a" opacity=".4"/><rect x="164" y="28" width="4" height="3" fill="#5a6a7a" opacity=".4"/><rect x="100" y="38" width="8" height="3" fill="#5a6a7a" opacity=".3"/><circle cx="104" cy="38" r="8" fill="none" stroke="#5a6a7a" stroke-width="1.5" opacity=".3"/><rect x="170" y="24" width="30" height="39" fill="#3a4a5a" opacity=".6"/><rect x="174" y="28" width="6" height="7" rx="1" fill="#4a5a6a" opacity=".4"/><rect x="184" y="28" width="6" height="7" rx="1" fill="#4a5a6a" opacity=".4"/><rect x="174" y="40" width="6" height="7" rx="1" fill="#4a5a6a" opacity=".4"/><rect x="184" y="40" width="6" height="7" rx="1" fill="#4a5a6a" opacity=".4"/><path d="M170 24h30l-3-4h-24Z" fill="#4a5a6a" opacity=".4"/><rect x="50" y="36" width="20" height="27" fill="#3a4a5a" opacity=".55"/><rect x="53" y="38" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".35"/><rect x="61" y="38" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".35"/><rect x="76" y="32" width="16" height="31" fill="#3a4a5a" opacity=".5"/><rect x="78" y="34" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="86" y="34" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="230" y="38" width="22" height="25" fill="#3a4a5a" opacity=".45"/><rect x="258" y="42" width="16" height="21" fill="#2a3a4a" opacity=".4"/>'],
+mumbai:['#3a2a1a','#4a3a2a','#3a3028','<path d="M145 56h30v-24l-15-14l-15 14Z" fill="#c4903a" opacity=".55"/><path d="M150 56h20v-18l-10-10l-10 10Z" fill="#b0803a" opacity=".35"/><rect x="145" y="56" width="8" height="7" fill="#b0803a" opacity=".45"/><rect x="167" y="56" width="8" height="7" fill="#b0803a" opacity=".45"/><rect x="153" y="38" width="4" height="5" rx="1" fill="#3a2a1a" opacity=".3"/><rect x="163" y="38" width="4" height="5" rx="1" fill="#3a2a1a" opacity=".3"/><rect x="156" y="48" width="8" height="8" rx="1" fill="#3a2a1a" opacity=".35"/><rect x="105" y="22" width="6" height="41" fill="#d4a843" opacity=".4"/><circle cx="108" cy="20" r="3.5" fill="#d4a843" opacity=".35"/><path d="M104 26h8l-1-3h-6Z" fill="#c4983a" opacity=".3"/><rect x="224" y="30" width="22" height="33" fill="#3a3a4a" opacity=".45"/><rect x="228" y="34" width="4" height="5" rx="1" fill="#5a5a6a" opacity=".3"/><rect x="236" y="34" width="4" height="5" rx="1" fill="#5a5a6a" opacity=".3"/><rect x="252" y="36" width="16" height="27" fill="#3a3a4a" opacity=".4"/><rect x="54" y="38" width="22" height="25" fill="#3a3a4a" opacity=".4"/><rect x="82" y="42" width="14" height="21" fill="#3a3a4a" opacity=".35"/>'],
+marrakech:['#4a2a0a','#5a3a1a','#8a5a30','<rect x="153" y="10" width="10" height="53" fill="#b85a3a" opacity=".6"/><circle cx="158" cy="8" r="5" fill="#c86a4a" opacity=".55"/><path d="M152 14h12l-1-3h-10Z" fill="#a85030" opacity=".4"/><rect x="155" y="18" width="2" height="3" fill="#d87a5a" opacity=".3"/><rect x="159" y="18" width="2" height="3" fill="#d87a5a" opacity=".3"/><path d="M65 34h60v29H65Z" fill="#8a4a2a" opacity=".35"/><path d="M60 34h70l-4-6H64Z" fill="#9a5a3a" opacity=".3"/><rect x="72" y="38" width="6" height="8" rx="2" fill="#6a3a1a" opacity=".3"/><rect x="86" y="38" width="6" height="8" rx="2" fill="#6a3a1a" opacity=".3"/><rect x="100" y="38" width="6" height="8" rx="2" fill="#6a3a1a" opacity=".3"/><rect x="82" y="52" width="10" height="11" rx="2" fill="#6a3a1a" opacity=".35"/><path d="M215 38h50v25H215Z" fill="#8a4a2a" opacity=".3"/><path d="M210 38h60l-4-5H214Z" fill="#9a5a3a" opacity=".25"/><rect x="222" y="42" width="5" height="6" rx="2" fill="#6a3a1a" opacity=".25"/><rect x="234" y="42" width="5" height="6" rx="2" fill="#6a3a1a" opacity=".25"/><rect x="246" y="42" width="5" height="6" rx="2" fill="#6a3a1a" opacity=".25"/><path d="M30 55Q38 50 44 48Q50 50 56 55" fill="none" stroke="#6a4a2a" stroke-width="1.5" opacity=".2"/><path d="M280 52Q286 46 292 52" fill="none" stroke="#6a4a2a" stroke-width="1" opacity=".15"/>'],
+bangkok:['#1a0a2a','#2a1a3a','#1a3020','<path d="M160 6L154 42h12Z" fill="#d4a843" opacity=".65"/><path d="M140 48h40l-5-10h-30Z" fill="#d4a843" opacity=".5"/><path d="M136 56h48l-3-8h-42Z" fill="#c4983a" opacity=".4"/><rect x="158" y="2" width="4" height="6" fill="#e4b853" opacity=".6"/><path d="M148 48h24v-4h-24Z" fill="#b89030" opacity=".3"/><rect x="155" y="32" width="3" height="4" fill="#e4b853" opacity=".25"/><rect x="162" y="32" width="3" height="4" fill="#e4b853" opacity=".25"/><path d="M226 14L222 48h8Z" fill="#c4903a" opacity=".4"/><path d="M216 52h20l-3-6h-14Z" fill="#c4903a" opacity=".3"/><path d="M224 10l2-3l2 3Z" fill="#d4a043" opacity=".35"/><path d="M78 18L74 48h8Z" fill="#c4903a" opacity=".3"/><path d="M68 52h20l-3-6h-14Z" fill="#c4903a" opacity=".25"/><path d="M76 14l2-3l2 3Z" fill="#d4a043" opacity=".25"/><path d="M254 58Q262 48 268 42Q274 48 280 58Z" fill="#1a4a2a" opacity=".2"/><path d="M38 56Q44 48 50 56" fill="#1a4a2a" opacity=".15"/>'],
+rome:['#2a1a1a','#3a2a2a','#3a3028','<path d="M122 58Q128 28 160 26Q192 28 198 58Z" fill="none" stroke="#8a7a6a" stroke-width="2.5" opacity=".55"/><path d="M128 58Q134 34 160 32Q186 34 192 58" fill="none" stroke="#8a7a6a" stroke-width="2" opacity=".4"/><path d="M134 58Q139 40 160 38Q181 40 186 58" fill="none" stroke="#8a7a6a" stroke-width="1.5" opacity=".3"/><path d="M140 58Q144 46 160 44Q176 46 180 58" fill="none" stroke="#8a7a6a" stroke-width="1" opacity=".2"/><rect x="148" y="30" width="6" height="28" fill="#7a6a5a" opacity=".15"/><rect x="166" y="30" width="6" height="28" fill="#7a6a5a" opacity=".15"/><rect x="138" y="34" width="4" height="24" fill="#7a6a5a" opacity=".12"/><rect x="178" y="34" width="4" height="24" fill="#7a6a5a" opacity=".12"/><rect x="155" y="46" width="10" height="12" rx="4" fill="#6a5a4a" opacity=".2"/><path d="M236 48a16 16 0 0 1 0-20" fill="#7a6a5a" opacity=".35"/><path d="M238 46a12 12 0 0 1 0-16" fill="#6a5a4a" opacity=".25"/><rect x="60" y="40" width="18" height="23" fill="#3a3028" opacity=".35"/><rect x="63" y="42" width="4" height="6" rx="1" fill="#5a4a3a" opacity=".25"/><rect x="70" y="42" width="4" height="6" rx="1" fill="#5a4a3a" opacity=".25"/><rect x="85" y="36" width="14" height="27" fill="#3a3028" opacity=".3"/>'],
+mexico_city:['#1a2a3a','#2a3a4a','#2a3a28','<path d="M136 63L160 24l24 39Z" fill="#8a7a5a" opacity=".45"/><path d="M142 63L160 32l18 31Z" fill="#9a8a6a" opacity=".35"/><path d="M148 63L160 40l12 23Z" fill="#aa9a7a" opacity=".25"/><path d="M155 24h10v-4h-10Z" fill="#7a6a4a" opacity=".3"/><rect x="157" y="18" width="6" height="4" fill="#6a5a3a" opacity=".25"/><rect x="216" y="26" width="20" height="37" fill="#3a4a5a" opacity=".5"/><rect x="220" y="30" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".35"/><rect x="228" y="30" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".35"/><rect x="220" y="40" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="228" y="40" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="242" y="34" width="14" height="29" fill="#3a4a5a" opacity=".4"/><rect x="56" y="30" width="18" height="33" fill="#3a4a5a" opacity=".45"/><rect x="59" y="34" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="66" y="34" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="80" y="38" width="12" height="25" fill="#3a4a5a" opacity=".35"/>'],
+istanbul:['#1a1a3a','#2a2a4a','#3a3028','<path d="M140 52a22 22 0 0 1 44 0" fill="#5a6a8a" opacity=".45"/><path d="M146 52a16 16 0 0 1 32 0" fill="#4a5a7a" opacity=".3"/><rect x="160" y="28" width="4" height="24" fill="#6a7a9a" opacity=".3"/><rect x="182" y="16" width="5" height="47" fill="#6a7a9a" opacity=".5"/><circle cx="184.5" cy="14" r="3" fill="#f0e68c" opacity=".2"/><rect x="133" y="18" width="5" height="45" fill="#6a7a9a" opacity=".4"/><circle cx="135.5" cy="16" r="3" fill="#f0e68c" opacity=".18"/><circle cx="162" cy="16" r="6" fill="#f0e68c" opacity=".12"/><path d="M226 55a14 14 0 0 1 28 0" fill="#5a6a8a" opacity=".3"/><rect x="252" y="30" width="4" height="33" fill="#6a7a8a" opacity=".3"/><circle cx="254" cy="28" r="2.5" fill="#f0e68c" opacity=".12"/><rect x="60" y="38" width="22" height="25" fill="#3a3a4a" opacity=".35"/><rect x="64" y="42" width="4" height="5" rx="1" fill="#5a5a6a" opacity=".25"/><rect x="72" y="42" width="4" height="5" rx="1" fill="#5a5a6a" opacity=".25"/><rect x="88" y="42" width="16" height="21" fill="#3a3a4a" opacity=".3"/>'],
+nairobi:['#2a3a1a','#4a5a2a','#5a6a30','<rect x="144" y="16" width="22" height="47" fill="#4a5a6a" opacity=".55"/><rect x="148" y="20" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".35"/><rect x="156" y="20" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".35"/><rect x="148" y="30" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".3"/><rect x="156" y="30" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".3"/><rect x="148" y="40" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".25"/><rect x="156" y="40" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".25"/><rect x="170" y="24" width="16" height="39" fill="#3a4a5a" opacity=".5"/><rect x="174" y="28" width="4" height="4" rx="1" fill="#5a6a7a" opacity=".3"/><rect x="126" y="28" width="14" height="35" fill="#3a4a5a" opacity=".45"/><rect x="192" y="32" width="12" height="31" fill="#3a4a5a" opacity=".4"/><path d="M245 63Q252 42 256 32Q258 36 260 42Q264 32 268 42Q272 32 278 63Z" fill="#5a6a3a" opacity=".45"/><path d="M250 63Q254 48 256 40Q258 44 262 40Q266 48 268 63Z" fill="#6a7a4a" opacity=".3"/><path d="M44 63Q50 46 54 38Q56 42 58 46Q62 38 66 46Q70 38 76 63Z" fill="#5a6a3a" opacity=".35"/><path d="M50 63Q54 52 56 46Q58 50 62 46Q66 52 68 63Z" fill="#6a7a4a" opacity=".25"/>'],
+reykjavik:['#0a1a2a','#1a2a3a','#2a3a4a','<path d="M95 63L136 20l41 43Z" fill="#4a5a6a" opacity=".35"/><path d="M102 63L136 28l34 35Z" fill="#5a6a7a" opacity=".2"/><path d="M136 20l1-4l1 4Z" fill="#fff" opacity=".15"/><path d="M175 63L206 28l31 35Z" fill="#4a5a6a" opacity=".3"/><path d="M182 63L206 35l24 28Z" fill="#5a6a7a" opacity=".18"/><path d="M55 63L78 36l23 27Z" fill="#5a6a7a" opacity=".25"/><path d="M60 63L78 42l18 21Z" fill="#6a7a8a" opacity=".15"/><circle cx="278" cy="12" r="7" fill="#5aa" opacity=".15"/><circle cx="278" cy="12" r="4" fill="#7cc" opacity=".1"/><path d="M252 63L264 44l12 19Z" fill="#4a5a6a" opacity=".2"/><path d="M36 56Q42 52 46 48Q48 52 52 56" fill="none" stroke="#5a7a8a" stroke-width="1" opacity=".15"/><path d="M290 54Q294 50 298 54" fill="none" stroke="#5a7a8a" stroke-width="1" opacity=".12"/>'],
+buenos_aires:['#1a2a3a','#2a3a5a','#2a3040','<rect x="143" y="6" width="8" height="57" fill="#ccc" opacity=".4"/><rect x="140" y="4" width="14" height="5" fill="#ddd" opacity=".35"/><rect x="145" y="2" width="4" height="4" fill="#ddd" opacity=".3"/><rect x="141" y="14" width="12" height="2" fill="#bbb" opacity=".2"/><rect x="141" y="22" width="12" height="2" fill="#bbb" opacity=".2"/><rect x="141" y="30" width="12" height="2" fill="#bbb" opacity=".2"/><rect x="166" y="24" width="24" height="39" fill="#3a4a5a" opacity=".55"/><rect x="170" y="28" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".35"/><rect x="180" y="28" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".35"/><rect x="170" y="40" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="180" y="40" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="106" y="28" width="26" height="35" fill="#3a4a5a" opacity=".5"/><rect x="110" y="32" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="120" y="32" width="5" height="6" rx="1" fill="#4a5a6a" opacity=".3"/><rect x="196" y="30" width="20" height="33" fill="#3a4a5a" opacity=".45"/><rect x="222" y="36" width="14" height="27" fill="#2a3a4a" opacity=".4"/><rect x="80" y="38" width="18" height="25" fill="#2a3a4a" opacity=".35"/>'],
+new_york:['#1a1a3a','#2a2a4a','#2a3040','<rect x="143" y="4" width="16" height="59" fill="#4a5a6a" opacity=".65"/><rect x="147" y="0" width="8" height="6" fill="#5a6a7a" opacity=".5"/><rect x="149" y="0" width="4" height="3" fill="#6a7a8a" opacity=".4"/><rect x="145" y="12" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".3"/><rect x="153" y="12" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".3"/><rect x="145" y="22" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".25"/><rect x="153" y="22" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".25"/><rect x="145" y="32" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".2"/><rect x="153" y="32" width="4" height="5" rx="1" fill="#6a7a8a" opacity=".2"/><rect x="163" y="12" width="14" height="51" fill="#3a4a5a" opacity=".6"/><rect x="166" y="16" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="172" y="16" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="123" y="18" width="16" height="45" fill="#3a4a5a" opacity=".55"/><rect x="126" y="22" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="133" y="22" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="52" y="32" width="8" height="31" fill="#5a8a6a" opacity=".45"/><path d="M52 32l4-10l4 10Z" fill="#5a8a6a" opacity=".45"/><rect x="54" y="34" width="4" height="3" fill="#4a7a5a" opacity=".25"/><rect x="181" y="16" width="12" height="47" fill="#3a4a5a" opacity=".5"/><rect x="198" y="24" width="10" height="39" fill="#3a4a5a" opacity=".4"/><rect x="110" y="28" width="10" height="35" fill="#3a4a5a" opacity=".4"/>'],
+beijing:['#2a0a0a','#3a1a1a','#3a3028','<rect x="116" y="18" width="88" height="45" fill="#8b2020" opacity=".25"/><path d="M110 18h100l-12-12H122Z" fill="#a03030" opacity=".35"/><path d="M120 10h80l-8-6H128Z" fill="#b04040" opacity=".3"/><path d="M130 32h60v-4l-8-6H138l-8 6Z" fill="#a03030" opacity=".25"/><rect x="152" y="32" width="16" height="31" fill="#8b2020" opacity=".35"/><rect x="156" y="34" width="8" height="12" rx="3" fill="#6a1010" opacity=".3"/><rect x="120" y="38" width="4" height="4" fill="#d4a843" opacity=".2"/><rect x="128" y="38" width="4" height="4" fill="#d4a843" opacity=".2"/><rect x="188" y="38" width="4" height="4" fill="#d4a843" opacity=".2"/><rect x="196" y="38" width="4" height="4" fill="#d4a843" opacity=".2"/><rect x="130" y="48" width="6" height="5" rx="1" fill="#6a1010" opacity=".2"/><rect x="184" y="48" width="6" height="5" rx="1" fill="#6a1010" opacity=".2"/><path d="M46 38L78 28l32 10v25H46Z" fill="#7a6a5a" opacity=".12"/><path d="M52 38L78 30l26 8v22H52Z" fill="#6a5a4a" opacity=".1"/><rect x="240" y="32" width="22" height="31" fill="#3a2a2a" opacity=".3"/><rect x="268" y="38" width="14" height="25" fill="#3a2a2a" opacity=".25"/>'],
+moscow:['#0a0a2a','#1a1a3a','#ddd','<path d="M140 44Q146 14 152 44Z" fill="#2a8a2a" opacity=".55"/><circle cx="146" cy="12" r="5" fill="#2a8a2a" opacity=".55"/><path d="M144 16h4v-2h-4Z" fill="#1a6a1a" opacity=".3"/><path d="M156 46Q162 18 168 46Z" fill="#c41e3a" opacity=".45"/><circle cx="162" cy="16" r="4.5" fill="#c41e3a" opacity=".45"/><path d="M160 20h4v-2h-4Z" fill="#a01830" opacity=".25"/><path d="M172 42Q177 20 182 42Z" fill="#d4a843" opacity=".45"/><circle cx="177" cy="18" r="4" fill="#d4a843" opacity=".45"/><path d="M175 22h4v-2h-4Z" fill="#b89030" opacity=".25"/><path d="M186 44Q190 26 194 44Z" fill="#3a5a8a" opacity=".4"/><circle cx="190" cy="24" r="3.5" fill="#3a5a8a" opacity=".4"/><path d="M188 28h4v-2h-4Z" fill="#2a4a7a" opacity=".2"/><path d="M198 46Q201 32 204 46Z" fill="#8a3a3a" opacity=".35"/><circle cx="201" cy="30" r="3" fill="#8a3a3a" opacity=".35"/><rect x="136" y="44" width="72" height="19" fill="#8a6a5a" opacity=".15"/><path d="M134 44h76l-3-4H137Z" fill="#9a7a6a" opacity=".12"/><rect x="100" y="36" width="18" height="27" fill="#4a4a5a" opacity=".25"/><rect x="220" y="34" width="16" height="29" fill="#4a4a5a" opacity=".25"/>'],
+lima:['#2a2a3a','#3a3a4a','#5a4a38','<path d="M96 63L128 30l32 33Z" fill="#7a6a5a" opacity=".28"/><path d="M102 63L128 36l26 27Z" fill="#8a7a6a" opacity=".18"/><path d="M196 63L234 18l38 45Z" fill="#6a7a8a" opacity=".22"/><path d="M204 63L234 26l30 37Z" fill="#7a8a9a" opacity=".14"/><rect x="142" y="20" width="24" height="43" fill="#8a7a5a" opacity=".35"/><path d="M138 20h32l-4-8H142Z" fill="#9a8a6a" opacity=".3"/><path d="M144 14h20l-3-4H147Z" fill="#aa9a7a" opacity=".2"/><rect x="148" y="24" width="5" height="6" rx="1" fill="#6a5a3a" opacity=".2"/><rect x="158" y="24" width="5" height="6" rx="1" fill="#6a5a3a" opacity=".2"/><rect x="150" y="36" width="8" height="10" rx="3" fill="#5a4a2a" opacity=".25"/><path d="M46 63L68 38l22 25Z" fill="#6a5a4a" opacity=".18"/><rect x="56" y="46" width="16" height="17" fill="#5a5a5a" opacity=".2"/><rect x="270" y="40" width="20" height="23" fill="#4a4a5a" opacity=".2"/>'],
+athens:['#2a3a5a','#3a4a6a','#6a7a5a','<rect x="128" y="22" width="7" height="41" fill="#dde" opacity=".4"/><rect x="141" y="22" width="7" height="41" fill="#dde" opacity=".4"/><rect x="154" y="22" width="7" height="41" fill="#dde" opacity=".4"/><rect x="167" y="22" width="7" height="41" fill="#dde" opacity=".4"/><rect x="180" y="22" width="7" height="41" fill="#dde" opacity=".4"/><rect x="124" y="18" width="68" height="6" fill="#dde" opacity=".35"/><path d="M124 18L158 4l34 14Z" fill="#dde" opacity=".3"/><path d="M130 18L158 8l28 10Z" fill="#ccd" opacity=".2"/><rect x="151" y="8" width="14" height="4" fill="#dde" opacity=".15"/><rect x="130" y="34" width="5" height="6" rx="1" fill="#aab" opacity=".15"/><rect x="143" y="34" width="5" height="6" rx="1" fill="#aab" opacity=".15"/><rect x="156" y="34" width="5" height="6" rx="1" fill="#aab" opacity=".15"/><rect x="169" y="34" width="5" height="6" rx="1" fill="#aab" opacity=".15"/><rect x="182" y="34" width="5" height="6" rx="1" fill="#aab" opacity=".15"/><rect x="145" y="48" width="22" height="15" rx="1" fill="#bbc" opacity=".12"/><rect x="60" y="38" width="22" height="25" fill="#3a4a5a" opacity=".3"/><rect x="240" y="36" width="18" height="27" fill="#3a4a5a" opacity=".25"/>'],
+havana:['#3a4a5a','#4a5a6a','#8a7a60','<rect x="106" y="26" width="32" height="37" rx="2" fill="#d4a060" opacity=".35"/><rect x="110" y="30" width="5" height="7" rx="1" fill="#b08040" opacity=".25"/><rect x="120" y="30" width="5" height="7" rx="1" fill="#b08040" opacity=".25"/><rect x="110" y="42" width="5" height="7" rx="1" fill="#b08040" opacity=".2"/><rect x="120" y="42" width="5" height="7" rx="1" fill="#b08040" opacity=".2"/><rect x="143" y="22" width="28" height="41" rx="2" fill="#c4705a" opacity=".35"/><rect x="147" y="26" width="5" height="7" rx="1" fill="#a05040" opacity=".25"/><rect x="160" y="26" width="5" height="7" rx="1" fill="#a05040" opacity=".25"/><rect x="147" y="38" width="5" height="7" rx="1" fill="#a05040" opacity=".2"/><rect x="160" y="38" width="5" height="7" rx="1" fill="#a05040" opacity=".2"/><rect x="176" y="28" width="28" height="35" rx="2" fill="#70a0a0" opacity=".3"/><rect x="180" y="32" width="5" height="6" rx="1" fill="#508080" opacity=".2"/><rect x="192" y="32" width="5" height="6" rx="1" fill="#508080" opacity=".2"/><rect x="210" y="30" width="24" height="33" rx="2" fill="#d4c070" opacity=".28"/><rect x="76" y="32" width="24" height="31" rx="2" fill="#a08060" opacity=".22"/><rect x="240" y="36" width="18" height="27" rx="2" fill="#b09060" opacity=".18"/>'],
+dubai:['#1a1a2a','#2a2a4a','#c4a870','<rect x="155" y="-2" width="8" height="65" fill="#8ab" opacity=".5"/><path d="M153 0h12l-2-4h-8Z" fill="#9bc" opacity=".45"/><rect x="157" y="8" width="4" height="3" fill="#6a9aaa" opacity=".3"/><rect x="157" y="16" width="4" height="3" fill="#6a9aaa" opacity=".25"/><rect x="157" y="24" width="4" height="3" fill="#6a9aaa" opacity=".2"/><rect x="157" y="32" width="4" height="3" fill="#6a9aaa" opacity=".18"/><path d="M170 36Q185 10 200 36" fill="#6a7a8a" opacity=".2"/><path d="M175 36Q185 16 195 36" fill="#5a6a7a" opacity=".15"/><rect x="178" y="18" width="14" height="45" fill="#6a7a8a" opacity=".3"/><rect x="182" y="22" width="3" height="4" rx="1" fill="#8a9aaa" opacity=".2"/><rect x="186" y="22" width="3" height="4" rx="1" fill="#8a9aaa" opacity=".2"/><rect x="116" y="26" width="18" height="37" fill="#6a7a8a" opacity=".25"/><rect x="120" y="30" width="3" height="4" rx="1" fill="#8a9aaa" opacity=".18"/><rect x="126" y="30" width="3" height="4" rx="1" fill="#8a9aaa" opacity=".18"/><rect x="198" y="24" width="12" height="39" fill="#6a7a8a" opacity=".22"/><rect x="140" y="34" width="10" height="29" fill="#5a6a7a" opacity=".2"/><rect x="216" y="32" width="14" height="31" fill="#5a6a7a" opacity=".18"/>'],
+lisbon:['#3a3a1a','#5a4a2a','#8a5a3a','<path d="M96 63L118 30l22 33Z" fill="#6a5a4a" opacity=".3"/><path d="M102 63L118 36l16 27Z" fill="#7a6a5a" opacity=".2"/><path d="M150 63L174 24l24 39Z" fill="#6a5a4a" opacity=".28"/><path d="M156 63L174 32l18 31Z" fill="#7a6a5a" opacity=".18"/><rect x="228" y="26" width="22" height="37" fill="#d4a040" opacity=".3"/><rect x="232" y="14" width="6" height="14" fill="#d4a040" opacity=".3"/><circle cx="235" cy="12" r="3" fill="#e4b050" opacity=".25"/><rect x="232" y="30" width="4" height="5" rx="1" fill="#b08030" opacity=".2"/><rect x="240" y="30" width="4" height="5" rx="1" fill="#b08030" opacity=".2"/><rect x="232" y="40" width="4" height="5" rx="1" fill="#b08030" opacity=".18"/><rect x="240" y="40" width="4" height="5" rx="1" fill="#b08030" opacity=".18"/><rect x="256" y="34" width="16" height="29" fill="#4a4a3a" opacity=".25"/><path d="M56 63L72 38l16 25Z" fill="#5a4a3a" opacity=".2"/><rect x="60" y="44" width="12" height="19" fill="#5a5a4a" opacity=".2"/><rect x="80" y="48" width="10" height="15" fill="#4a4a3a" opacity=".15"/>'],
+amsterdam:['#1a2a3a','#2a3a4a','#1a3050','<path d="M96 63L105 26h10l9 37Z" fill="#8a4a2a" opacity=".35"/><path d="M101 26l4-10l4 10Z" fill="#8a4a2a" opacity=".35"/><rect x="103" y="34" width="4" height="5" rx="1" fill="#6a3a1a" opacity=".2"/><rect x="103" y="44" width="4" height="5" rx="1" fill="#6a3a1a" opacity=".18"/><path d="M121 63L130 22h10l9 41Z" fill="#7a5a3a" opacity=".35"/><path d="M126 22l4-8l4 8Z" fill="#7a5a3a" opacity=".35"/><rect x="128" y="30" width="4" height="5" rx="1" fill="#5a3a1a" opacity=".2"/><rect x="128" y="40" width="4" height="5" rx="1" fill="#5a3a1a" opacity=".18"/><path d="M146 63L155 28h10l9 35Z" fill="#9a5a3a" opacity=".35"/><path d="M151 28l4-8l4 8Z" fill="#9a5a3a" opacity=".35"/><rect x="153" y="36" width="4" height="5" rx="1" fill="#7a4a2a" opacity=".2"/><path d="M171 63L180 24h10l9 39Z" fill="#7a4a2a" opacity=".32"/><path d="M176 24l4-8l4 8Z" fill="#7a4a2a" opacity=".32"/><rect x="178" y="32" width="4" height="5" rx="1" fill="#5a3a1a" opacity=".18"/><path d="M196 63L205 30h10l9 33Z" fill="#8a5a3a" opacity=".3"/><path d="M201 30l4-8l4 8Z" fill="#8a5a3a" opacity=".3"/><rect x="90" y="56" width="130" height="7" fill="#1a3050" opacity=".35"/><path d="M92 56h126v-2H92Z" fill="#2a4060" opacity=".2"/>'],
+seoul:['#1a1a3a','#2a1a4a','#3a3a40','<rect x="126" y="16" width="56" height="47" fill="#5a3030" opacity=".28"/><path d="M120 16h68l-10-10H130Z" fill="#6a4040" opacity=".32"/><path d="M128 8h52l-6-5H134Z" fill="#7a5050" opacity=".25"/><path d="M132 28h44l-5-8H137Z" fill="#6a4040" opacity=".22"/><rect x="140" y="34" width="6" height="6" rx="1" fill="#4a2020" opacity=".2"/><rect x="152" y="34" width="6" height="6" rx="1" fill="#4a2020" opacity=".2"/><rect x="164" y="34" width="6" height="6" rx="1" fill="#4a2020" opacity=".2"/><rect x="146" y="48" width="16" height="15" rx="3" fill="#4a2020" opacity=".25"/><rect x="216" y="8" width="12" height="55" fill="#5a6a7a" opacity=".35"/><circle cx="222" cy="14" r="6" fill="#5a6a7a" opacity=".18"/><circle cx="222" cy="14" r="3" fill="#6a7a8a" opacity=".12"/><rect x="220" y="24" width="4" height="4" rx="1" fill="#4a5a6a" opacity=".2"/><rect x="220" y="34" width="4" height="4" rx="1" fill="#4a5a6a" opacity=".18"/><rect x="66" y="24" width="18" height="39" fill="#4a5a6a" opacity=".3"/><rect x="70" y="28" width="4" height="5" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="76" y="28" width="4" height="5" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="90" y="32" width="12" height="31" fill="#3a4a5a" opacity=".25"/>'],
+tashkent:['#1a2a3a','#2a3a5a','#5a5a40','<rect x="153" y="12" width="10" height="51" fill="#2a8aaa" opacity=".5"/><circle cx="158" cy="10" r="5" fill="#2a8aaa" opacity=".45"/><path d="M152 16h12l-1-3h-10Z" fill="#1a7a9a" opacity=".3"/><rect x="155" y="20" width="2" height="3" fill="#3a9aba" opacity=".25"/><rect x="159" y="20" width="2" height="3" fill="#3a9aba" opacity=".25"/><path d="M116 34h44v29H116Z" fill="#2a6a8a" opacity=".25"/><path d="M112 34h52l-6-12H118Z" fill="#3a7a9a" opacity=".3"/><path d="M118 26h40l-4-6H122Z" fill="#4a8aaa" opacity=".2"/><rect x="124" y="38" width="5" height="6" rx="2" fill="#1a5a7a" opacity=".2"/><rect x="136" y="38" width="5" height="6" rx="2" fill="#1a5a7a" opacity=".2"/><rect x="148" y="38" width="5" height="6" rx="2" fill="#1a5a7a" opacity=".2"/><rect x="132" y="50" width="8" height="13" rx="3" fill="#1a5a7a" opacity=".25"/><rect x="196" y="28" width="34" height="35" fill="#4a4a5a" opacity=".2"/><rect x="200" y="32" width="5" height="5" rx="1" fill="#5a5a6a" opacity=".15"/><rect x="210" y="32" width="5" height="5" rx="1" fill="#5a5a6a" opacity=".15"/><rect x="84" y="38" width="26" height="25" fill="#3a4a4a" opacity=".2"/><rect x="88" y="42" width="4" height="5" rx="1" fill="#5a5a5a" opacity=".15"/>'],
+montevideo:['#2a3a5a','#3a4a6a','#3a4040','<rect x="136" y="18" width="26" height="45" fill="#4a5a6a" opacity=".35"/><rect x="140" y="22" width="5" height="6" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="150" y="22" width="5" height="6" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="140" y="34" width="5" height="6" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="150" y="34" width="5" height="6" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="140" y="46" width="18" height="17" rx="1" fill="#3a4a5a" opacity=".25"/><rect x="166" y="24" width="20" height="39" fill="#3a4a5a" opacity=".35"/><rect x="170" y="28" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".2"/><rect x="178" y="28" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".2"/><rect x="112" y="26" width="18" height="37" fill="#3a4a5a" opacity=".3"/><rect x="115" y="30" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".2"/><rect x="122" y="30" width="4" height="5" rx="1" fill="#4a5a6a" opacity=".2"/><rect x="196" y="38" width="34" height="25" fill="#5a4a3a" opacity=".18"/><rect x="56" y="42" width="28" height="21" fill="#4a5a5a" opacity=".18"/><rect x="240" y="44" width="18" height="19" fill="#3a4a4a" opacity=".15"/>'],
+perth:['#1a3a5a','#2a4a6a','#3a5a3a','<rect x="136" y="20" width="20" height="43" fill="#4a6a7a" opacity=".35"/><rect x="140" y="24" width="4" height="5" rx="1" fill="#5a7a8a" opacity=".25"/><rect x="148" y="24" width="4" height="5" rx="1" fill="#5a7a8a" opacity=".25"/><rect x="140" y="34" width="4" height="5" rx="1" fill="#5a7a8a" opacity=".2"/><rect x="148" y="34" width="4" height="5" rx="1" fill="#5a7a8a" opacity=".2"/><rect x="160" y="16" width="16" height="47" fill="#4a5a6a" opacity=".4"/><rect x="164" y="20" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="170" y="20" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="164" y="30" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="170" y="30" width="3" height="4" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="118" y="28" width="14" height="35" fill="#3a5a6a" opacity=".3"/><rect x="180" y="28" width="20" height="35" fill="#3a4a5a" opacity=".3"/><rect x="206" y="34" width="14" height="29" fill="#3a4a5a" opacity=".25"/><path d="M246 63Q254 44 260 34Q264 40 266 44Q270 34 274 44Q278 34 284 63Z" fill="#3a6a3a" opacity=".35"/><path d="M252 63Q258 50 262 42Q266 48 270 42Q274 50 278 63Z" fill="#4a7a4a" opacity=".25"/>'],
+kigali:['#1a3a2a','#2a4a3a','#3a5a2a','<path d="M76 63Q116 30 156 34Q196 30 236 63Z" fill="#2a5a2a" opacity=".28"/><path d="M90 63Q126 38 156 40Q186 38 222 63Z" fill="#3a6a3a" opacity=".22"/><path d="M104 63Q134 46 156 48Q178 46 208 63Z" fill="#4a7a4a" opacity=".15"/><rect x="144" y="24" width="18" height="39" fill="#4a5a6a" opacity=".4"/><rect x="148" y="28" width="4" height="5" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="154" y="28" width="4" height="5" rx="1" fill="#5a6a7a" opacity=".25"/><rect x="148" y="38" width="4" height="5" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="154" y="38" width="4" height="5" rx="1" fill="#5a6a7a" opacity=".2"/><rect x="148" y="48" width="10" height="15" rx="1" fill="#3a4a5a" opacity=".25"/><rect x="168" y="30" width="14" height="33" fill="#3a4a5a" opacity=".35"/><rect x="172" y="34" width="3" height="4" rx="1" fill="#4a5a6a" opacity=".2"/><rect x="126" y="32" width="14" height="31" fill="#3a4a5a" opacity=".3"/><rect x="129" y="36" width="3" height="4" rx="1" fill="#4a5a6a" opacity=".18"/>']
+};
+
+const MAP_POS={
+paris:[162,37],tokyo:[284,48],cairo:[188,53],rio:[122,100],sydney:[295,110],
+london:[160,34],mumbai:[225,63],marrakech:[153,52],bangkok:[250,68],rome:[171,43],
+mexico_city:[72,63],istanbul:[186,43],nairobi:[193,81],reykjavik:[141,23],
+buenos_aires:[108,111],new_york:[94,44],beijing:[264,45],moscow:[193,30],
+lima:[91,91],athens:[181,46],havana:[87,59],dubai:[209,58],lisbon:[152,46],
+amsterdam:[164,33],seoul:[273,47],tashkent:[222,43],montevideo:[110,111],
+perth:[263,108],kigali:[187,82]
+};
+
+const CONTINENTS='<path d="M38,22L50,18 58,20 68,18 78,20 88,22 94,26 96,30 92,34 88,32 82,30 76,34 72,38 68,44 64,50 62,56 58,62 56,68 58,74 62,78 66,80 70,78 74,76 78,80 80,86 76,92 70,96 68,100 72,106 78,108 84,104 88,100 92,96 96,98 98,102 96,108 92,114 86,118 80,120 72,118 66,114 62,112 58,116 54,122 48,126 42,124 38,120 34,116 32,110 34,106 38,102 42,98 44,92 42,86 38,82 36,76 38,72 42,68 44,62 42,56 40,50 36,46 32,42 30,36 32,30 36,26Z" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="0.6"/><path d="M80,80L84,78 88,76 92,78 96,82 102,80 106,76 110,74 114,72 118,70 120,66 118,62 114,60 110,58 108,54 106,48 104,44 100,40 96,38 92,36 88,34 84,32 78,30 72,28 66,28 60,28 56,30 52,32 48,28 44,26 40,24 38,22" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.4"/><path d="M148,22L152,20 158,18 164,20 170,24 174,28 178,26 182,22 188,18 194,16 200,14 208,14 216,16 224,18 232,22 238,26 244,28 250,32 256,36 262,38 268,42 274,44 280,48 286,50 290,54 292,58 288,62 284,64 278,62 272,60 266,62 260,60 256,58 252,56 248,58 244,62 238,66 232,70 226,74 220,72 216,68 212,64 208,62 204,60 200,58 196,56 192,54 188,52 184,50 180,48 176,44 172,42 168,40 164,38 160,36 156,32 152,28 150,24Z" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="0.6"/><path d="M156,48L160,44 164,42 168,46 172,50 176,54 178,60 176,66 172,72 168,78 166,84 168,90 172,96 174,102 172,108 168,112 164,116 160,118 156,114 154,108 156,102 160,96 162,90 160,84 156,78 152,72 150,66 148,60 150,54 154,50Z" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="0.6"/><path d="M192,46L196,44 200,46 204,50 208,54 206,60 202,64 198,66 194,64 190,60 188,54 190,50Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/><path d="M258,94L264,90 270,88 278,90 284,94 290,98 292,104 290,110 286,114 280,116 274,114 268,110 264,106 260,100Z" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="0.6"/><path d="M40,140L60,138 80,140 100,142 120,140 140,138 160,136 180,138 200,140 220,142 240,140 260,138 280,140 300,142" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>';
+
+function drawCity(id){
+  const a=ART[id];if(!a)return'';
+  const g='g'+id.replace(/[^a-z]/g,'').slice(0,6);
+  let s='<svg viewBox="0 0 320 130" class="city-art" aria-hidden="true"><defs><linearGradient id="'+g+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+a[0]+'"/><stop offset="70%" stop-color="'+a[1]+'"/><stop offset="100%" stop-color="'+a[2]+'"/></linearGradient><radialGradient id="'+g+'h" cx="50%" cy="100%"><stop offset="0%" stop-color="'+a[2]+'" stop-opacity=".18"/><stop offset="100%" stop-color="'+a[2]+'" stop-opacity="0"/></radialGradient></defs><rect width="320" height="130" fill="url(#'+g+')"/>';
+  let h=0;for(let i=0;i<id.length;i++)h=((h<<5)-h+id.charCodeAt(i))|0;
+  for(let i=0;i<28;i++){
+    const sx=Math.abs((h*(i+1)*17)%312)+4,sy=Math.abs((h*(i+1)*31)%40)+2;
+    const sr=(i%7===0)?1.4:(i%5===0)?1.0:(i%3===0)?0.7:0.4;
+    const op=(i%4===0)?0.28:(i%3===0)?0.18:0.1;
+    s+='<circle cx="'+sx+'" cy="'+sy+'" r="'+sr+'" fill="#fff" opacity="'+op+'"/>';
+  }
+  s+='<ellipse cx="160" cy="105" rx="180" ry="30" fill="url(#'+g+'h)"/>';
+  s+='<g transform="translate(0,30) scale(1,1.25)">'+a[3]+'</g>';
+  s+='<rect y="108" width="320" height="22" fill="'+a[2]+'"/>';
+  s+='<rect y="108" width="320" height="1.5" fill="rgba(255,255,255,0.06)"/>';
+  for(let i=0;i<5;i++){const lx=Math.abs((h*(i+7)*23)%300)+10;s+='<line x1="'+lx+'" y1="114" x2="'+(lx+12)+'" y2="114" stroke="rgba(255,255,255,0.025)" stroke-width=".5"/>';}
+  s+='</svg>';return s;
+}
+
+const SKIN=['#f1c27d','#c68642','#f0c39e','#d4a070','#8d5524','#e0ac69','#f1c27d','#b07840','#f0c39e','#d2b48c','#6b4423','#deb887'];
+const IRIS=['#4a7a41','#2c1810','#5a8fbc','#3a2a1a','#2c1810','#5a8fbc','#6a5a30','#2c1810','#5a8fbc','#4a7a41','#2c1810','#3a6a3a'];
+const CLOTH_C=['#2a3a4a','#4a4a5a','#4a5a3a','#5a4a2a','#3a1a2a','#3a4a3a','#2a2a2a','#3a2020','#3a2a3a','#1a1a2a','#2a3a2a','#5a3a2a'];
+
+function skinSh(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const d=c=>Math.max(0,Math.round(c*.78)).toString(16).padStart(2,'0');
+  return'#'+d(r)+d(g)+d(b);
+}
+
+function drawPortrait(s){
+  const HC={red:'#c0392b',dark:'#1a2535',blonde:'#d4a843'};
+  const sk=SKIN[s.id],skD=skinSh(sk),skH=skinHi(sk),ir=IRIS[s.id],hc=HC[s.hair]||'#555',cc=CLOTH_C[s.id];
+  const fw=14+(s.id%3),fh=18+(s.id%2),hi=s.id%5;
+  const jawW=fw+(s.id%4===0?2:s.id%4===1?-1:s.id%4===2?1:0);
+  let v='<svg viewBox="0 0 80 100" class="portrait" aria-label="'+esc(s.name)+'">';
+  v+='<defs><radialGradient id="pg'+s.id+'"><stop offset="0%" stop-color="#161b22"/><stop offset="100%" stop-color="#0d1117"/></radialGradient></defs>';
+  v+='<rect width="80" height="100" rx="5" fill="url(#pg'+s.id+')"/>';
+  if(hi===0)v+='<ellipse cx="40" cy="28" rx="20" ry="15" fill="'+hc+'"/>';
+  else if(hi===1)v+='<ellipse cx="40" cy="30" rx="18" ry="17" fill="'+hc+'"/>';
+  else if(hi===2)v+='<rect x="20" y="16" width="40" height="26" rx="12" fill="'+hc+'"/>';
+  else if(hi===3)v+='<ellipse cx="40" cy="26" rx="22" ry="13" fill="'+hc+'"/>';
+  else v+='<ellipse cx="40" cy="28" rx="19" ry="16" fill="'+hc+'"/>';
+  v+='<ellipse cx="'+(40-fw+1)+'" cy="43" rx="3" ry="4" fill="'+sk+'"/>';
+  v+='<ellipse cx="'+(40+fw-1)+'" cy="43" rx="3" ry="4" fill="'+sk+'"/>';
+  v+='<ellipse cx="40" cy="42" rx="'+fw+'" ry="'+fh+'" fill="'+sk+'"/>';
+  v+='<ellipse cx="40" cy="46" rx="'+(fw-2)+'" ry="'+(fh-4)+'" fill="'+skD+'" opacity=".15"/>';
+  v+='<ellipse cx="36" cy="38" rx="4" ry="3" fill="'+skH+'" opacity=".08"/>';
+  v+='<ellipse cx="44" cy="38" rx="4" ry="3" fill="'+skH+'" opacity=".08"/>';
+  v+='<path d="M'+(40-jawW)+' 54Q40 '+(62+s.id%3)+' '+(40+jawW)+' 54" fill="'+skD+'" opacity=".08"/>';
+  if(hi===0)v+='<path d="M24 34Q28 20 40 18Q52 20 56 34Q50 26 40 24Q30 26 24 34Z" fill="'+hc+'"/>';
+  else if(hi===1)v+='<path d="M22 36Q26 16 40 14Q54 16 58 36Q52 24 40 22Q28 24 22 36Z" fill="'+hc+'"/>';
+  else if(hi===2)v+='<path d="M22 32Q28 14 40 12Q52 14 58 32L56 36Q50 20 40 18Q30 20 24 36Z" fill="'+hc+'"/>';
+  else if(hi===3)v+='<path d="M22 34Q24 22 40 20Q56 22 58 34Q54 28 40 26Q26 28 22 34Z" fill="'+hc+'"/>';
+  else v+='<path d="M24 36Q28 18 40 16Q52 18 56 36Q52 22 40 20Q28 22 24 36Z" fill="'+hc+'"/>';
+  if(hi===1||hi===3||hi===4){
+    const hl=hi===1?'22 36Q20 48 22 52':hi===3?'19 30Q17 44 20 50':'22 34Q19 46 22 52';
+    const hr=hi===1?'58 36Q60 48 58 52':hi===3?'61 30Q63 44 60 50':'58 34Q61 46 58 52';
+    v+='<path d="M'+hl+'" fill="none" stroke="'+hc+'" stroke-width="3.5" stroke-linecap="round"/>';
+    v+='<path d="M'+hr+'" fill="none" stroke="'+hc+'" stroke-width="3.5" stroke-linecap="round"/>';
+  }
+  if(s.id%3===0)v+='<path d="M30 28Q35 26 40 27Q45 26 50 28" fill="none" stroke="'+skinHi(hc)+'" stroke-width=".8" opacity=".25"/>';
+  const ey=40,lx=33,rx=47;
+  const ew=3.4+(s.id%2)*.4,eh=2.6-(s.id%3)*.15;
+  v+='<ellipse cx="'+lx+'" cy="'+ey+'" rx="'+(ew+.5)+'" ry="'+(eh+.5)+'" fill="'+skD+'" opacity=".15"/>';
+  v+='<ellipse cx="'+rx+'" cy="'+ey+'" rx="'+(ew+.5)+'" ry="'+(eh+.5)+'" fill="'+skD+'" opacity=".15"/>';
+  v+='<ellipse cx="'+lx+'" cy="'+ey+'" rx="'+ew+'" ry="'+eh+'" fill="#f8f4f0"/>';
+  v+='<ellipse cx="'+rx+'" cy="'+ey+'" rx="'+ew+'" ry="'+eh+'" fill="#f8f4f0"/>';
+  v+='<circle cx="'+(lx+.3)+'" cy="'+(ey+.2)+'" r="2" fill="'+ir+'"/>';
+  v+='<circle cx="'+(rx-.3)+'" cy="'+(ey+.2)+'" r="2" fill="'+ir+'"/>';
+  v+='<circle cx="'+(lx+.3)+'" cy="'+(ey+.2)+'" r=".9" fill="#111"/>';
+  v+='<circle cx="'+(rx-.3)+'" cy="'+(ey+.2)+'" r=".9" fill="#111"/>';
+  v+='<circle cx="'+(lx+.8)+'" cy="'+(ey-.6)+'" r=".6" fill="#fff" opacity=".8"/>';
+  v+='<circle cx="'+(rx+.2)+'" cy="'+(ey-.6)+'" r=".6" fill="#fff" opacity=".8"/>';
+  v+='<circle cx="'+(lx-.3)+'" cy="'+(ey+.5)+'" r=".3" fill="#fff" opacity=".4"/>';
+  v+='<circle cx="'+(rx-.8)+'" cy="'+(ey+.5)+'" r=".3" fill="#fff" opacity=".4"/>';
+  if(s.id%2===0){
+    v+='<path d="M'+(lx-ew)+' '+(ey-.3)+'Q'+(lx-ew-1)+' '+(ey-1)+' '+(lx-ew-.5)+' '+(ey-1.5)+'" fill="none" stroke="'+skD+'" stroke-width=".4" stroke-linecap="round"/>';
+    v+='<path d="M'+(rx+ew)+' '+(ey-.3)+'Q'+(rx+ew+1)+' '+(ey-1)+' '+(rx+ew+.5)+' '+(ey-1.5)+'" fill="none" stroke="'+skD+'" stroke-width=".4" stroke-linecap="round"/>';
+  }
+  const browY=ey-4.5,browA=s.id%3===0?1.5:s.id%3===1?0.8:0,browW=s.id%2===0?1.3:1.0;
+  v+='<path d="M'+(lx-3.5)+' '+(browY+browA)+'Q'+lx+' '+(browY-1.5)+' '+(lx+3.5)+' '+(browY)+'" fill="none" stroke="'+hc+'" stroke-width="'+browW+'" stroke-linecap="round"/>';
+  v+='<path d="M'+(rx-3.5)+' '+(browY)+'Q'+rx+' '+(browY-1.5)+' '+(rx+3.5)+' '+(browY+browA)+'" fill="none" stroke="'+hc+'" stroke-width="'+browW+'" stroke-linecap="round"/>';
+  const nt=s.id%4;
+  if(nt===0)v+='<path d="M40 43v5l-2.5 1.5" fill="none" stroke="'+skD+'" stroke-width=".8" stroke-linecap="round"/><path d="M37.5 49Q39 50 40.5 49" fill="none" stroke="'+skD+'" stroke-width=".4" opacity=".4"/>';
+  else if(nt===1)v+='<path d="M40 43v5" fill="none" stroke="'+skD+'" stroke-width=".9"/><ellipse cx="40" cy="49" rx="2.5" ry="1.2" fill="'+skD+'" opacity=".15"/>';
+  else if(nt===2)v+='<path d="M40 43v4.5l-2 2" fill="none" stroke="'+skD+'" stroke-width=".7" stroke-linecap="round"/><path d="M38 49.5l2.5.5" fill="none" stroke="'+skD+'" stroke-width=".35" opacity=".3"/>';
+  else v+='<path d="M39.5 43v5.5" fill="none" stroke="'+skD+'" stroke-width=".65"/><path d="M39.5 48.5Q40 49.5 41 49" fill="none" stroke="'+skD+'" stroke-width=".4" opacity=".35"/>';
+  const mt=s.id%4;
+  if(mt===0){v+='<path d="M35 53.5Q40 56.5 45 53.5" fill="none" stroke="#9a5a4a" stroke-width=".9" stroke-linecap="round"/>';v+='<path d="M36 54.5Q40 55.5 44 54.5" fill="#c07060" opacity=".15"/>';}
+  else if(mt===1){v+='<path d="M34 53Q40 57 46 53" fill="#b87060" opacity=".3"/><path d="M34 53Q40 57 46 53" fill="none" stroke="#9a5a4a" stroke-width=".6"/>';v+='<path d="M36 54Q40 55 44 54" fill="#fff" opacity=".06"/>';}
+  else if(mt===2){v+='<path d="M36 53.5Q40 55.5 44 53.5" fill="none" stroke="#9a5a4a" stroke-width=".8" stroke-linecap="round"/>';}
+  else{v+='<path d="M35 53Q40 56 45 53" fill="#c07060" opacity=".2"/><path d="M35 53Q40 56 45 53" fill="none" stroke="#8a5a4a" stroke-width=".5"/>';}
+  v+=featSVG(s);
+  v+='<path d="M6 100Q16 82 28 76Q34 74 40 76Q46 74 52 76Q64 82 74 100Z" fill="'+cc+'"/>';
+  v+='<path d="M20 88Q30 82 40 84Q50 82 60 88" fill="none" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>';
+  const ct=s.id%3;
+  if(ct===0){v+='<path d="M34 76Q37 80 40 82Q43 80 46 76" fill="none" stroke="rgba(255,255,255,.15)" stroke-width=".7"/>';v+='<line x1="40" y1="82" x2="40" y2="92" stroke="rgba(255,255,255,.06)" stroke-width=".4"/>';}
+  else if(ct===1){v+='<path d="M32 76L40 82L48 76" fill="'+skD+'" opacity=".15"/>';v+='<path d="M32 76L40 82L48 76" fill="none" stroke="rgba(255,255,255,.1)" stroke-width=".5"/>';}
+  else{v+='<path d="M35 76Q40 80 45 76" fill="none" stroke="rgba(255,255,255,.08)" stroke-width=".6"/>';}
+  v+='<ellipse cx="40" cy="73" rx="5.5" ry="2.5" fill="'+sk+'"/>';
+  v+='<ellipse cx="40" cy="73" rx="4" ry="1.5" fill="'+skD+'" opacity=".1"/>';
+  v+='</svg>';return v;
+}
+function skinHi(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const d=c=>Math.min(255,Math.round(c*1.2)).toString(16).padStart(2,'0');
+  return'#'+d(r)+d(g)+d(b);
+}
+
+function featSVG(s){
+  const f=s.feature;
+  if(f.includes('scar'))return'<line x1="27" y1="43" x2="21" y2="53" stroke="#6a4030" stroke-width="2.2" stroke-linecap="round"/><line x1="26" y1="44" x2="22" y2="52" stroke="#a07050" stroke-width="1" stroke-linecap="round"/><line x1="23" y1="46" x2="25" y2="47" stroke="#a07050" stroke-width=".7" stroke-linecap="round"/><line x1="22" y1="49" x2="24" y2="50" stroke="#a07050" stroke-width=".7" stroke-linecap="round"/><line x1="21" y1="51" x2="23" y2="52.5" stroke="#a07050" stroke-width=".6" stroke-linecap="round"/>';
+  if(f.includes('monocle'))return'<circle cx="47" cy="40" r="6" fill="none" stroke="#d4a843" stroke-width="1"/><circle cx="47" cy="40" r="5" fill="rgba(180,220,255,0.08)"/><circle cx="47" cy="40" r="4.5" fill="none" stroke="#d4a843" stroke-width=".3"/><line x1="53" y1="43" x2="58" y2="56" stroke="#d4a843" stroke-width=".6"/><circle cx="58" cy="56" r="1.2" fill="none" stroke="#d4a843" stroke-width=".4"/><circle cx="45" cy="38" r="1" fill="rgba(255,255,255,.12)"/>';
+  if(f.includes('snake'))return'<path d="M28 62Q23 58 25 54Q27 50 23 46Q21 43 22 40" fill="none" stroke="#4a8a4a" stroke-width="1.8" stroke-linecap="round"/><path d="M28 62Q24 59 26 55Q28 51 24 47Q22 44 23 41" fill="none" stroke="#5a9a5a" stroke-width=".8" stroke-linecap="round"/><circle cx="22" cy="39.5" r="1.2" fill="#4a8a4a"/><circle cx="21" cy="39" r=".5" fill="#ff6"/><circle cx="23" cy="39" r=".5" fill="#ff6"/><path d="M20 38l-2-1" fill="none" stroke="#c44" stroke-width=".6"/><path d="M20 38l-2 0" fill="none" stroke="#c44" stroke-width=".4"/>';
+  if(f.includes('cowboy hat'))return'<path d="M12 22h56l-3-2H15Z" fill="#7a5a14"/><path d="M15 20h50l-4-3H19Z" fill="#8b6914"/><rect x="20" y="10" width="40" height="12" rx="8" fill="#a07a24"/><rect x="24" y="6" width="32" height="6" rx="4" fill="#b08a34"/><rect x="28" y="5" width="24" height="2" rx="1" fill="#c09a44" opacity=".5"/><path d="M25 17h30v1H25Z" fill="#6a4a0a" opacity=".3"/><rect x="56" y="12" width="3" height="6" rx="1" fill="#d4a843" opacity=".4"/>';
+  if(f.includes('scarf'))return'<path d="M20 66Q28 73 40 71Q52 73 60 66" fill="#c41e3a" stroke="#a01e30" stroke-width=".6"/><path d="M24 68Q32 72 40 71Q48 72 56 68" fill="#a01830" opacity=".4"/><path d="M36 71Q34 80 32 88" fill="none" stroke="#c41e3a" stroke-width="2.5" stroke-linecap="round"/><path d="M40 71Q38 79 37 86" fill="none" stroke="#a01e30" stroke-width="1.8" stroke-linecap="round"/><path d="M33 82l-2 6" fill="none" stroke="#c41e3a" stroke-width="1.5" stroke-linecap="round"/><path d="M32 80h4" fill="none" stroke="#8a1020" stroke-width=".4"/><path d="M33 84h3" fill="none" stroke="#8a1020" stroke-width=".3"/>';
+  if(f.includes('gold tooth'))return'<rect x="37.5" y="54" width="3" height="3" rx=".6" fill="#d4a843"/><rect x="38" y="54.3" width="2" height=".6" fill="#e4b853" opacity=".6"/><rect x="38.3" y="55.5" width=".4" height="1" fill="#b89030" opacity=".4"/>';
+  if(f.includes('round glasses'))return'<circle cx="33" cy="40" r="6" fill="none" stroke="#bbc" stroke-width=".9"/><circle cx="47" cy="40" r="6" fill="none" stroke="#bbc" stroke-width=".9"/><circle cx="33" cy="40" r="5" fill="rgba(180,200,220,0.06)"/><circle cx="47" cy="40" r="5" fill="rgba(180,200,220,0.06)"/><line x1="39" y1="40" x2="41" y2="40" stroke="#bbc" stroke-width=".6"/><line x1="27" y1="39" x2="22" y2="37" stroke="#bbc" stroke-width=".5"/><line x1="53" y1="39" x2="58" y2="37" stroke="#bbc" stroke-width=".5"/><circle cx="30" cy="38" r="1.2" fill="rgba(255,255,255,.08)"/><circle cx="44" cy="38" r="1.2" fill="rgba(255,255,255,.08)"/>';
+  if(f.includes('eye patch'))return'<ellipse cx="33" cy="40" rx="7" ry="5.5" fill="#111"/><ellipse cx="33" cy="40" rx="6" ry="4.5" fill="#1a1a1a"/><path d="M26 36Q20 34 14 33" fill="none" stroke="#222" stroke-width="1.4"/><path d="M40 35Q48 32 56 30" fill="none" stroke="#222" stroke-width="1.4"/><path d="M26 44Q20 46 14 48" fill="none" stroke="#222" stroke-width=".9"/><circle cx="30" cy="39" r=".8" fill="#333" opacity=".5"/>';
+  if(f.includes('pearl'))return'<circle cx="28" cy="61" r="2.2" fill="#eee" opacity=".6"/><circle cx="28" cy="61" r="1" fill="#fff" opacity=".3"/><circle cx="33" cy="63.5" r="2.2" fill="#eee" opacity=".65"/><circle cx="33" cy="63.5" r="1" fill="#fff" opacity=".3"/><circle cx="38.5" cy="65" r="2.2" fill="#eee" opacity=".7"/><circle cx="38.5" cy="65" r="1" fill="#fff" opacity=".35"/><circle cx="44" cy="64" r="2.2" fill="#eee" opacity=".65"/><circle cx="44" cy="64" r="1" fill="#fff" opacity=".3"/><circle cx="49" cy="62" r="2.2" fill="#eee" opacity=".6"/><circle cx="49" cy="62" r="1" fill="#fff" opacity=".3"/><circle cx="53.5" cy="59.5" r="2.2" fill="#eee" opacity=".55"/><circle cx="53.5" cy="59.5" r="1" fill="#fff" opacity=".25"/>';
+  if(f.includes('top hat'))return'<rect x="22" y="0" width="36" height="20" rx="4" fill="#111"/><rect x="24" y="2" width="32" height="16" rx="3" fill="#1a1a1a"/><rect x="18" y="18" width="44" height="6" rx="2" fill="#111"/><rect x="20" y="19" width="40" height="4" rx="1.5" fill="#151515"/><rect x="26" y="16" width="28" height="3" fill="#2a2a3a" opacity=".6"/><rect x="28" y="17" width="24" height="1" fill="#3a3a4a" opacity=".3"/>';
+  if(f.includes('butterfly'))return'<ellipse cx="33" cy="72" rx="4.5" ry="3.5" fill="#c41e3a" opacity=".5" transform="rotate(-20 33 72)"/><ellipse cx="33.5" cy="72.5" rx="3" ry="2" fill="#d42e4a" opacity=".35" transform="rotate(-15 33.5 72.5)"/><ellipse cx="45" cy="72" rx="4.5" ry="3.5" fill="#3a7abf" opacity=".5" transform="rotate(20 45 72)"/><ellipse cx="44.5" cy="72.5" rx="3" ry="2" fill="#4a8acf" opacity=".35" transform="rotate(15 44.5 72.5)"/><circle cx="39" cy="72" r="1.2" fill="#d4a843"/><circle cx="39" cy="72" r=".6" fill="#e4b853" opacity=".6"/><line x1="38" y1="70" x2="36" y2="67" stroke="#333" stroke-width=".3"/><line x1="40" y1="70" x2="42" y2="67" stroke="#333" stroke-width=".3"/>';
+  if(f.includes('mustache'))return'<path d="M30 52Q25 48 20 50Q24 54 32 52" fill="#3a2a1a"/><path d="M50 52Q55 48 60 50Q56 54 48 52" fill="#3a2a1a"/><path d="M32 52Q40 54.5 48 52" fill="none" stroke="#3a2a1a" stroke-width=".5"/><path d="M28 51Q24 49 21 50" fill="none" stroke="#4a3a2a" stroke-width=".4"/><path d="M52 51Q56 49 59 50" fill="none" stroke="#4a3a2a" stroke-width=".4"/><path d="M30 52.5Q26 51 22 51.5" fill="none" stroke="#2a1a0a" stroke-width=".3"/><path d="M50 52.5Q54 51 58 51.5" fill="none" stroke="#2a1a0a" stroke-width=".3"/>';
+  return'';
+}
+
+let S={rank:0,casesWon:0,casesPlayed:0,diff:'medium'};
+let C=null;
+
+function loadP(){try{const d=localStorage.getItem('acme_detective2');if(d){const p=JSON.parse(d);S.rank=p.rank||0;S.casesWon=p.casesWon||0;S.casesPlayed=p.casesPlayed||0;S.diff=p.diff||'medium';}}catch(e){}}
+function saveP(){try{localStorage.setItem('acme_detective2',JSON.stringify(S));}catch(e){}}
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function newCase(){
+  const d=DIFF[S.diff];
+  const item=ITEMS[Math.floor(Math.random()*ITEMS.length)];
+  const suspect=SUSPECTS[Math.floor(Math.random()*SUSPECTS.length)];
+  const origin=item.origin;
+  const others=CIDS.filter(c=>c!==origin);
+  const trailCities=shuffle(others).slice(0,d.trail-1);
+  const trail=[origin,...trailCities];
+  const usedTraits=new Set();
+  const cq={};
+  for(let i=0;i<trail.length;i++){
+    const city=trail[i],isLast=i===trail.length-1;
+    let search,witness,airport=[];
+    if(isLast){
+      search=[{type:'alert',text:'Witnesses report seeing someone matching the suspect just minutes ago. The suspect is HERE — issue a warrant and make the arrest!'}];
+      airport=[{type:'info',text:'No outbound flights booked — the suspect may still be in this city!'}];
+    }else{
+      const next=trail[i+1];
+      const pool=shuffle([...CITIES[next].clues]);
+      search=pool.slice(0,2).map(t=>({type:'destination',text:t}));
+      airport=[{type:'region',text:'Airport records show the suspect booked passage toward '+CITIES[next].region+'.'}];
+    }
+    const avail=CATS.filter(t=>!usedTraits.has(t));
+    const pick=shuffle(avail).slice(0,Math.min(2,avail.length));
+    pick.forEach(t=>usedTraits.add(t));
+    witness=pick.map(cat=>({type:'suspect',text:suspect.traitText[cat],category:cat,value:suspect[cat]}));
+    if(isLast){
+      const extra=CATS.filter(t=>!usedTraits.has(t));
+      if(extra.length>0){const cat=extra[0];usedTraits.add(cat);witness.push({type:'suspect',text:suspect.traitText[cat],category:cat,value:suspect[cat]});}
+    }
+    cq[city]={search,witness,airport,si:0,wi:0,ai:0};
+  }
+  C={item,suspect,trail,currentCity:origin,trailIdx:0,hours:d.hours,
+    dossier:{hair:null,food:null,hobby:null,feature:null},
+    cluesFound:[],cq,warrant:null,msgs:[],lookUsed:{},atDeadEnd:false};
+}
+
+function getTravel(){
+  const d=DIFF[S.diff];
+  const correct=C.trailIdx<C.trail.length-1?C.trail[C.trailIdx+1]:null;
+  const exclude=new Set(C.trail);exclude.add(C.currentCity);
+  if(C.atDeadEnd&&correct)exclude.delete(correct);
+  let pool=CIDS.filter(c=>!exclude.has(c)&&c!==C.currentCity);
+  const decoys=shuffle(pool).slice(0,d.decoys);
+  const options=correct?shuffle([correct,...decoys]):shuffle(decoys.slice(0,d.decoys+1));
+  return{options,correct};
+}
+
+function doSearch(){
+  if(C.hours<1)return;
+  const q=C.cq[C.currentCity];
+  if(!q||q.si>=q.search.length){addMsg('info','Investigation','You have searched everywhere here. No more leads.');return;}
+  C.hours--;
+  const clue=q.search[q.si++];
+  const intro=INTROS[Math.floor(Math.random()*INTROS.length)];
+  const text=clue.type==='alert'?clue.text:intro+' "'+clue.text+'"';
+  C.cluesFound.push({...clue,displayText:text,city:C.currentCity});
+  addMsg(clue.type==='alert'?'alert':'clue',clue.type==='alert'?'Alert':'Clue Found',text);
+  renderCity();
+}
+
+function doWitness(){
+  if(C.hours<1)return;
+  const q=C.cq[C.currentCity];
+  if(!q||q.wi>=q.witness.length){addMsg('info','Witnesses','No one else here has seen the suspect.');return;}
+  C.hours--;
+  const clue=q.witness[q.wi++];
+  const intro=INTROS[Math.floor(Math.random()*INTROS.length)];
+  const text=intro+' "'+clue.text+'"';
+  C.cluesFound.push({...clue,displayText:text,city:C.currentCity});
+  C.dossier[clue.category]=clue.value;
+  addMsg('clue','Witness Report',text);
+  renderCity();
+}
+
+function doAirport(){
+  if(C.hours<1)return;
+  const q=C.cq[C.currentCity];
+  if(!q||q.ai>=q.airport.length){addMsg('info','Airport','No more records to check here.');return;}
+  C.hours--;
+  const clue=q.airport[q.ai++];
+  C.cluesFound.push({...clue,displayText:clue.text,city:C.currentCity});
+  addMsg(clue.type==='alert'?'alert':'info','Airport Records',clue.text);
+  renderCity();
+}
+
+function doTravel(cityId){
+  const cost=DIFF[S.diff].travel;
+  if(C.hours<cost)return;
+  C.hours-=cost;
+  const data=getTravel();
+  const fromCity=C.currentCity;
+  hideScr('s-travel');
+  showFlight(fromCity,cityId,()=>{
+    C.currentCity=cityId;
+    if(cityId===data.correct){C.trailIdx++;C.atDeadEnd=false;}
+    else{C.atDeadEnd=true;}
+    C.msgs=[];
+    if(C.atDeadEnd)addMsg('info','Dead End','You search the area but find no trace of the suspect. The trail must lead elsewhere — check your clues and try another destination.');
+    renderCity();
+  });
+}
+
+function doGoBack(){
+  if(C.hours<1||!C.atDeadEnd)return;
+  C.hours-=1;
+  const fromCity=C.currentCity;
+  const toCity=C.trail[C.trailIdx];
+  showFlight(fromCity,toCity,()=>{
+    C.currentCity=toCity;
+    C.atDeadEnd=false;
+    C.msgs=[];
+    addMsg('info','Returned','You retrace your steps back to '+CITIES[C.currentCity].name+'. The trail continues from here.');
+    renderCity();
+  });
+}
+
+function doLook(){
+  const city=CITIES[C.currentCity];
+  const idx=C.lookUsed[C.currentCity]||0;
+  if(idx>=city.look.length){addMsg('info','Explore','You\'ve already explored everything here.');return;}
+  C.lookUsed[C.currentCity]=idx+1;
+  addMsg('info','Explore',city.look[idx]);
+  renderCity();
+}
+
+function issueWarrant(sid){
+  C.warrant=sid;
+  hideScr('s-dossier');
+  addMsg('alert','Warrant Issued','Warrant issued for '+SUSPECTS[sid].name+'! Find the suspect and make the arrest.');
+  renderCity();
+}
+
+function doArrest(){
+  if(C.warrant===null){
+    if(!C.msgs.some(m=>m.label==='No Warrant'))addMsg('alert','No Warrant','You need to issue a warrant first! Check your dossier.');
+    renderCity();return;
+  }
+  const isLast=C.trailIdx===C.trail.length-1&&!C.atDeadEnd;
+  if(!isLast){
+    if(!C.msgs.some(m=>m.label==='No Suspect Found'))addMsg('info','No Suspect Found','The suspect is not in this city. Follow the clues to track them down.');
+    renderCity();return;
+  }
+  S.casesPlayed++;
+  if(C.warrant===C.suspect.id){
+    S.casesWon++;
+    if(S.casesWon>0&&S.casesWon%2===0&&S.rank<RANKS.length-1)S.rank++;
+    saveP();showResult('win');
+  }else{saveP();showResult('wrong');}
+}
+
+function trailGoneCold(){
+  S.casesPlayed++;saveP();showResult('cold');
+}
+
+function addMsg(type,label,text){C.msgs.push({type,label,text});}
+
+const $=id=>document.getElementById(id);
+function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function hideScr(id){$(id).classList.remove('active');}
+function showOvr(id){$(id).classList.add('active');}
+
+function showFlight(fromId,toId,cb){
+  const fp=MAP_POS[fromId]||[160,80],tp=MAP_POS[toId]||[160,80];
+  const fx=fp[0],fy=fp[1],tx=tp[0],ty=tp[1];
+  const mx=(fx+tx)/2,my=Math.max(5,Math.min(fy,ty)-28);
+  const pathD='M'+fx+','+fy+' Q'+mx+','+my+' '+tx+','+ty;
+  const fromC=CITIES[fromId],toC=CITIES[toId];
+  let svg='<svg viewBox="0 0 320 160" class="flight-map">';
+  svg+='<rect width="320" height="160" fill="#080c12"/>';
+  svg+='<defs><pattern id="fgrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0L0 0 0 20" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="0.5"/></pattern></defs>';
+  svg+='<rect width="320" height="160" fill="url(#fgrid)"/>';
+  svg+=CONTINENTS;
+  svg+='<path d="'+pathD+'" fill="none" stroke="rgba(45,168,145,0.5)" stroke-width="1.2" stroke-dasharray="4,3" stroke-dashoffset="200"><animate attributeName="stroke-dashoffset" from="200" to="0" dur="1.5s" fill="freeze"/></path>';
+  svg+='<circle cx="'+fx+'" cy="'+fy+'" r="3" fill="#d4a843" opacity=".8"><animate attributeName="r" values="3;5;3" dur="1s" repeatCount="indefinite"/></circle>';
+  svg+='<circle cx="'+tx+'" cy="'+ty+'" r="3" fill="#2da891" opacity="0"><animate attributeName="opacity" from="0" to=".8" begin=".8s" dur=".5s" fill="freeze"/></circle>';
+  svg+='<g><animateMotion dur="1.8s" fill="freeze" rotate="auto" path="'+pathD+'"/><polygon points="-5,0 5,-3 5,3" fill="#2da891"/></g>';
+  svg+='<text x="'+fx+'" y="'+(fy-8)+'" text-anchor="middle" fill="#d4a843" font-size="7" font-weight="600" opacity=".8">'+esc(fromC.name)+'</text>';
+  svg+='<text x="'+tx+'" y="'+(ty+14)+'" text-anchor="middle" fill="#2da891" font-size="7" font-weight="600" opacity="0"><animate attributeName="opacity" from="0" to=".8" begin="1s" dur=".5s" fill="freeze"/>'+esc(toC.name)+'</text>';
+  svg+='</svg>';
+  const content='<p class="flight-label">In Transit</p>'+svg+'<div class="flight-route"><span class="fa">'+fromC.flag+' '+esc(fromC.name)+'</span><span class="arrow">→</span><span class="fb">'+toC.flag+' '+esc(toC.name)+'</span></div><div class="flight-cost">'+DIFF[S.diff].travel+' hours travel time</div>';
+  $('flight-content').innerHTML=content;
+  showScr('s-flight');
+  setTimeout(cb,2200);
+}
+
+function renderTitle(){
+  $('title-rank').textContent=S.casesWon>0?'Rank: '+RANKS[S.rank]+' · Cases Solved: '+S.casesWon:'';
+  $('btn-new').textContent=S.casesPlayed===0?'Accept Your First Case':'Accept Your Next Case';
+  document.querySelectorAll('.diff-chip').forEach(c=>{c.classList.toggle('active',c.dataset.d===S.diff);});
+  $('diff-desc').textContent=DIFF[S.diff].desc;
+  showScr('s-title');
+}
+
+function renderBriefing(){
+  $('b-title').textContent=C.item.name+' has been stolen!';
+  $('b-body').innerHTML='Agent, we have a crisis. <span class="stolen">'+esc(C.item.name)+'</span> — '+esc(C.item.desc)+' — has been stolen from <span class="origin">'+esc(CITIES[C.item.origin].name)+', '+esc(CITIES[C.item.origin].country)+'</span>! A member of V.I.L.E.\'s criminal network is responsible.';
+  $('b-foot').textContent='Track the thief across the globe. You have '+DIFF[S.diff].hours+' hours before the trail goes cold. ('+DIFF[S.diff].label+' difficulty)';
+  showScr('s-briefing');
+}
+
+function renderCity(){
+  const city=CITIES[C.currentCity];
+  const d=DIFF[S.diff];
+  $('hud-t').textContent='⏰ '+C.hours+' hrs remaining';
+  $('hud-r').textContent='Rank: '+RANKS[S.rank];
+  $('city-art-wrap').innerHTML=drawCity(C.currentCity);
+  $('c-flag').textContent=city.flag;
+  $('c-name').textContent=city.name;
+  $('c-country').textContent=city.country;
+  $('city-desc').textContent=city.desc;
+
+  const body=$('city-body');body.innerHTML='';
+  for(const m of C.msgs){
+    const div=document.createElement('div');
+    div.className='msg '+(m.type==='clue'?'clue':m.type==='alert'?'alert':'info');
+    div.innerHTML='<div class="lbl">'+esc(m.label)+'</div>'+esc(m.text);
+    body.appendChild(div);
+  }
+  body.scrollTop=body.scrollHeight;
+
+  const acts=$('actions');acts.innerHTML='';
+  const isLast=C.trailIdx===C.trail.length-1&&!C.atDeadEnd;
+  const q=C.cq[C.currentCity];
+  const onTrail=!C.atDeadEnd;
+  const canSearch=q&&q.si<q.search.length&&C.hours>=1&&onTrail;
+  const canWitness=q&&q.wi<q.witness.length&&C.hours>=1&&onTrail;
+  const canAirport=q&&q.ai<q.airport.length&&C.hours>=1&&onTrail;
+  const lookLeft=city.look&&(C.lookUsed[C.currentCity]||0)<city.look.length;
+  const canTravel=C.hours>=d.travel&&!isLast;
+  const canGoBack=C.atDeadEnd&&C.hours>=1;
+
+  const stuck=!isLast&&!canTravel&&!(C.atDeadEnd&&canGoBack);
+
+  mkBtn(acts,'🔍 Explore','',lookLeft,doLook);
+  mkBtn(acts,'🗣️ Witnesses','',canWitness,doWitness);
+  mkBtn(acts,'🕵️ Search Clues','',canSearch,doSearch);
+  mkBtn(acts,'📡 Airport Records','',canAirport,doAirport);
+  mkBtn(acts,'📋 Dossier','',true,()=>renderDossier());
+
+  if(stuck){
+    if(!C.msgs.some(m=>m.label==='Trail Gone Cold'))addMsg('alert','Trail Gone Cold','You don\'t have enough time to continue the pursuit. The suspect has slipped away.');
+    body.innerHTML='';
+    for(const m of C.msgs){
+      const div=document.createElement('div');
+      div.className='msg '+(m.type==='clue'?'clue':m.type==='alert'?'alert':'info');
+      div.innerHTML='<div class="lbl">'+esc(m.label)+'</div>'+esc(m.text);
+      body.appendChild(div);
+    }
+    const b=mkBtn(acts,'❌ Case Report','cold full',true,trailGoneCold);b.classList.add('full');
+  } else {
+    if(canGoBack){const b=mkBtn(acts,'🔙 Go Back (1 hr)','go-back full',true,doGoBack);b.classList.add('full');}
+    if(canTravel){const b=mkBtn(acts,'✈️ Travel ('+d.travel+' hrs)','travel full',true,()=>renderTravel());b.classList.add('full');}
+    if(isLast||C.warrant!==null){const b=mkBtn(acts,'🚔 Make Arrest','primary full',true,doArrest);b.classList.add('full');}
+  }
+
+  showScr('s-city');
+}
+
+function mkBtn(p,text,cls,en,fn){
+  const b=document.createElement('button');
+  b.className='act'+(cls?' '+cls:'');
+  b.textContent=text;b.disabled=!en;
+  b.addEventListener('click',fn);
+  p.appendChild(b);return b;
+}
+
+function renderTravel(){
+  const{options}=getTravel();
+  $('travel-cost').textContent='Choose your destination. ('+DIFF[S.diff].travel+' hours)';
+  const list=$('travel-list');list.innerHTML='';
+  for(const cid of options){
+    const city=CITIES[cid];
+    const b=document.createElement('button');b.className='dest';
+    b.innerHTML='<span class="df">'+city.flag+'</span><div><span class="dc">'+esc(city.name)+'</span><br><span class="dk">'+esc(city.country)+'</span></div>';
+    b.addEventListener('click',()=>doTravel(cid));
+    list.appendChild(b);
+  }
+  showOvr('s-travel');
+}
+
+function renderDossier(){
+  const d=$('dossier-c');d.innerHTML='';
+  d.innerHTML='<h2>📋 Case Dossier</h2>';
+  let sec=document.createElement('div');sec.className='dsec';
+  sec.innerHTML='<h3>Case</h3><div class="trow"><span class="tl">Stolen</span><span class="tv">'+esc(C.item.name)+'</span></div><div class="trow"><span class="tl">From</span><span class="tv">'+esc(CITIES[C.item.origin].name)+'</span></div><div class="trow"><span class="tl">Difficulty</span><span class="tv">'+DIFF[S.diff].label+'</span></div>';
+  d.appendChild(sec);
+
+  sec=document.createElement('div');sec.className='dsec';
+  sec.innerHTML='<h3>Suspect Profile</h3>';
+  for(const cat of CATS){
+    const val=C.dossier[cat];
+    sec.innerHTML+='<div class="trow"><span class="tl">'+CAT_LABELS[cat]+'</span><span class="tv'+(val?'':' unk')+'">'+esc(val||'Unknown')+'</span></div>';
+  }
+  d.appendChild(sec);
+
+  sec=document.createElement('div');sec.className='dsec';
+  sec.innerHTML='<h3>V.I.L.E. Suspects</h3>';
+  for(const s of SUSPECTS){
+    const match=CATS.every(cat=>{if(!C.dossier[cat])return true;return s[cat]===C.dossier[cat];});
+    const card=document.createElement('div');
+    card.className='scard'+(match?' match':' elim');
+    const traits=s.hair+' hair · '+s.food+' · '+s.hobby+' · '+s.feature;
+    const portraitHtml=drawPortrait(s);
+    if(match){
+      card.innerHTML=portraitHtml+'<div class="si"><div class="sn">'+esc(s.name)+'</div><div class="st">'+esc(traits)+'</div></div>';
+      const btn=document.createElement('button');btn.className='wbtn';
+      btn.textContent=C.warrant===s.id?'✓ Warrant':'Issue Warrant';
+      btn.disabled=C.warrant===s.id;
+      btn.addEventListener('click',()=>issueWarrant(s.id));
+      card.appendChild(btn);
+    }else{
+      card.innerHTML=portraitHtml+'<div class="si"><div class="sn">'+esc(s.name)+'</div><div class="st">'+esc(traits)+'</div></div>';
+    }
+    sec.appendChild(card);
+  }
+  d.appendChild(sec);
+
+  if(C.cluesFound.length>0){
+    sec=document.createElement('div');sec.className='dsec';
+    sec.innerHTML='<h3>Evidence Log</h3>';
+    const ul=document.createElement('ul');ul.className='elog';
+    for(const c of C.cluesFound){
+      const li=document.createElement('li');
+      li.className=c.type==='suspect'?'sc':'';
+      li.textContent=c.displayText;
+      ul.appendChild(li);
+    }
+    sec.appendChild(ul);d.appendChild(sec);
+  }
+
+  const btn=document.createElement('button');btn.className='btn btn-out';btn.style.width='100%';
+  btn.textContent='Close';btn.addEventListener('click',()=>hideScr('s-dossier'));
+  d.appendChild(btn);
+  showOvr('s-dossier');
+}
+
+function showResult(outcome){
+  const card=$('rcard');
+  card.className='rcard '+(outcome==='win'?'win':'lose');
+  if(outcome==='win'){
+    $('r-title').textContent='Case Closed!';
+    $('r-body').innerHTML=esc(C.item.name)+' has been recovered!<br><strong>'+esc(C.suspect.name)+'</strong> has been arrested.';
+    $('r-rank').textContent='Rank: '+RANKS[S.rank]+(S.casesWon%2===0&&S.rank>0?' — Promoted!':'');
+  }else if(outcome==='cold'){
+    $('r-title').textContent='Trail Gone Cold';
+    $('r-body').innerHTML='You ran out of time! The real thief was <strong>'+esc(C.suspect.name)+'</strong>.<br>'+esc(C.item.name)+' remains missing.';
+    $('r-rank').textContent='Better luck next time, '+RANKS[S.rank]+'.';
+  }else{
+    const wn=SUSPECTS[C.warrant]?SUSPECTS[C.warrant].name:'Unknown';
+    $('r-body').innerHTML='You issued a warrant for '+esc(wn)+', but the real thief was <strong>'+esc(C.suspect.name)+'</strong>!<br>'+esc(C.item.name)+' remains missing.';
+    $('r-title').textContent='The Suspect Escaped!';
+    $('r-rank').textContent='Better luck next time, '+RANKS[S.rank]+'.';
+  }
+  showScr('s-result');
+}
+
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+$('btn-new').addEventListener('click',()=>{newCase();renderBriefing();});
+$('btn-go').addEventListener('click',()=>{
+  addMsg('info','Arrived','You arrive at '+CITIES[C.currentCity].name+', '+CITIES[C.currentCity].country+'. Start investigating — search for clues and talk to witnesses.');
+  renderCity();
+});
+$('btn-cancel-t').addEventListener('click',()=>hideScr('s-travel'));
+$('btn-next').addEventListener('click',()=>{newCase();renderBriefing();});
+document.querySelectorAll('.diff-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    S.diff=chip.dataset.d;saveP();
+    document.querySelectorAll('.diff-chip').forEach(c=>c.classList.toggle('active',c.dataset.d===S.diff));
+    $('diff-desc').textContent=DIFF[S.diff].desc;
+  });
+});
+
+loadP();renderTitle();
+</script>
